@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微信公众号排版编辑器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+
+  :root {
+    --bg: #f5f0eb;
+    --panel: #ffffff;
+    --accent: #e8452a;
+    --accent2: #2a6ae8;
+    --text: #1a1a1a;
+    --muted: #888;
+    --border: #e0dbd5;
+    --toolbar-bg: #1a1a1a;
+    --toolbar-text: #f5f0eb;
+    --preview-max: 677px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif SC', 'PingFang SC', 'Hiragino Sans GB', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--toolbar-bg);
+    color: var(--toolbar-text);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 3px solid var(--accent);
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  header span {
+    font-size: 12px;
+    color: #aaa;
+    margin-left: auto;
+  }
+
+  /* ── Layout ── */
+  .workspace {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    overflow: hidden;
+    height: calc(100vh - 55px);
+  }
+
+  /* ── Left Panel: Toolbar + Editor ── */
+  .editor-panel {
+    width: 50%;
+    display: flex;
+    flex-direction: row;
+    border-right: 2px solid var(--border);
+    background: var(--panel);
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    background: #fafaf8;
+    border-right: 1px solid var(--border);
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    width: 52px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .toolbar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    width: 100%;
+  }
+  .toolbar-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .toolbar-label {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+
+  .tb-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 4px 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    transition: all .15s;
+    white-space: nowrap;
+    font-family: inherit;
+    width: 38px;
+    text-align: center;
+  }
+  .tb-btn:hover { background: var(--border); border-color: #ccc; }
+  .tb-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tb-btn.accent2 { background: var(--accent2); color: #fff; }
+  .tb-btn.accent2:hover { opacity: .85; }
+
+  .tb-select {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 3px;
+    font-size: 11px;
+    background: white;
+    cursor: pointer;
+    color: var(--text);
+    font-family: inherit;
+    width: 40px;
+  }
+  .tb-color {
+    width: 28px; height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px;
+  }
+
+  /* ── Title Input ── */
+  .title-area {
+    padding: 16px 20px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  #article-title {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Noto Serif SC', serif;
+    color: var(--text);
+    background: transparent;
+    resize: none;
+    line-height: 1.4;
+  }
+  #article-title::placeholder { color: #ccc; }
+
+  /* ── Editor Area ── */
+  .editor-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    min-width: 0;
+  }
+  #editor {
+    flex: 1;
+    padding: 16px 20px;
+    outline: none;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--text);
+    font-family: 'Noto Serif SC', serif;
+  }
+  #editor:empty::before {
+    content: '在此输入正文内容…\A\A提示：选中文字后可使用上方工具栏设置格式；点击「插入图片」按钮添加图片。';
+    color: #ccc;
+    white-space: pre;
+    pointer-events: none;
+  }
+  #editor img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 12px 0;
+    border-radius: 4px;
+  }
+  #editor h2 { font-size: 20px; font-weight: 700; margin: 18px 0 8px; line-height: 1.4; }
+  #editor h3 { font-size: 17px; font-weight: 700; margin: 14px 0 6px; }
+  #editor blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 8px 14px;
+    margin: 12px 0;
+    background: #fdf5f3;
+    color: #555;
+    font-style: italic;
+  }
+  #editor p { margin-bottom: 10px; }
+
+  /* ── Right Panel: Preview ── */
+  .preview-panel {
+    width: 50%;
+    background: #e8e3dd;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .preview-header {
+    background: #1a1a1a;
+    color: #f5f0eb;
+    padding: 10px 20px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .preview-header .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  .phone-wrap {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    padding: 20px 16px;
+  }
+
+  .phone-frame {
+    width: 375px;
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.25);
+    min-height: 600px;
+  }
+  .phone-status {
+    background: #f7f7f7;
+    padding: 6px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #999;
+    border-bottom: 1px solid #eee;
+  }
+  .wechat-article-view {
+    padding: 18px 16px 40px;
+    font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+    font-size: 15px;
+    line-height: 1.85;
+    color: #333;
+  }
+  .wechat-article-view h1.art-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    color: #111;
+  }
+  .wechat-article-view img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 10px 0;
+  }
+  .wechat-article-view h2 { font-size: 18px; font-weight: 700; margin: 16px 0 6px; color: #111; }
+  .wechat-article-view h3 { font-size: 16px; font-weight: 700; margin: 12px 0 4px; }
+  .wechat-article-view blockquote {
+    border-left: 3px solid #e8452a;
+    padding: 6px 12px;
+    margin: 10px 0;
+    background: #fdf5f3;
+    color: #666;
+    font-style: italic;
+    font-size: 14px;
+  }
+  .wechat-meta {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: #999;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .wechat-meta .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+  }
+
+  /* ── Actions bar ── */
+  .actions-bar {
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    background: #fafaf8;
+  }
+  .action-btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 600;
+    transition: all .15s;
+  }
+  .action-btn.primary { background: var(--accent); color: #fff; }
+  .action-btn.primary:hover { opacity: .85; }
+  .action-btn.secondary { background: var(--border); color: var(--text); }
+  .action-btn.secondary:hover { background: #d0ccc7; }
+
+  /* ── Image Insert Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 16px; }
+  .modal-tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+  .modal-tab {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all .15s;
+    font-family: inherit;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    color: var(--muted);
+  }
+  .modal-tab.active { border-bottom-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .modal-tab-content { display: none; }
+  .modal-tab-content.active { display: block; }
+  .modal input[type=text], .modal input[type=url] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent2); }
+  .modal label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--muted);
+    transition: all .15s;
+  }
+  .upload-zone:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all .3s;
+    pointer-events: none;
+    z-index: 2000;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📝 微信公众号排版编辑器</h1>
+  <span>实时预览 · 一键复制</span>
+</header>
+
+<div class="workspace">
+
+  <!-- ══════════ LEFT: EDITOR ══════════ -->
+  <div class="editor-panel">
+
+    <!-- Sidebar Toolbar -->
+    <div class="toolbar">
+
+      <!-- 段落 -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">段落</span>
+        <select class="tb-select" id="sel-block" onchange="applyBlock(this.value)" title="段落格式">
+          <option value="p">正文</option>
+          <option value="h1">H1</option>
+          <option value="h2">H2</option>
+          <option value="h3">H3</option>
+          <option value="blockquote">引用</option>
+        </select>
+      </div>
+
+      <!-- 字号 -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">字号</span>
+        <select class="tb-select" id="sel-size" onchange="applyFontSize(this.value)" title="字体大小">
+          <option value="">默</option>
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="15px" selected>15</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="22px">22</option>
+          <option value="24px">24</option>
+        </select>
+      </div>
+
+      <!-- 格式 -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">格式</span>
+        <button class="tb-btn" onclick="execCmd('bold')" title="加粗"><b>B</b></button>
+        <button class="tb-btn" onclick="execCmd('italic')" title="斜体"><i>I</i></button>
+        <button class="tb-btn" onclick="execCmd('underline')" title="下划线"><u>U</u></button>
+        <button class="tb-btn" onclick="execCmd('strikeThrough')" title="删除线"><s>S</s></button>
+      </div>
+
+      <!-- 对齐 -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">对齐</span>
+        <button class="tb-btn" onclick="execCmd('justifyLeft')" title="左对齐">左</button>
+        <button class="tb-btn" onclick="execCmd('justifyCenter')" title="居中">中</button>
+        <button class="tb-btn" onclick="execCmd('justifyRight')" title="右对齐">右</button>
+      </div>
+
+      <!-- 颜色 -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">颜色</span>
+        <input type="color" class="tb-color" id="color-picker" value="#e8452a" onchange="applyColor(this.value)" title="自定义文字颜色">
+        <button class="tb-btn" onclick="applyColor('#e8452a')" style="color:#e8452a;" title="红色">红</button>
+        <button class="tb-btn" onclick="applyColor('#2a6ae8')" style="color:#2a6ae8;" title="蓝色">蓝</button>
+        <button class="tb-btn" onclick="applyColor('#1a8a3a')" style="color:#1a8a3a;" title="绿色">绿</button>
+        <button class="tb-btn" onclick="applyColor('#1a1a1a')" title="黑色">黑</button>
+      </div>
+
+      <!-- 高亮 -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">高亮</span>
+        <input type="color" class="tb-color" id="bg-picker" value="#fff9c4" onchange="applyBg(this.value)" title="自定义高亮色">
+        <button class="tb-btn" onclick="applyBg('#fff9c4')" style="background:#fff9c4;" title="黄色高亮">黄</button>
+        <button class="tb-btn" onclick="applyBg('#fde8e8')" style="background:#fde8e8;" title="粉色高亮">粉</button>
+        <button class="tb-btn" onclick="applyBg('transparent')" title="清除高亮">清</button>
+      </div>
+
+      <!-- 插入 -->
+      <div class="toolbar-section">
+        <span class="toolbar-label">插入</span>
+        <button class="tb-btn accent2" onclick="openImgModal()" title="插入图片">📷</button>
+        <button class="tb-btn" onclick="insertDivider()" title="插入分割线">—</button>
+        <button class="tb-btn" onclick="execCmd('insertUnorderedList')" title="插入列表">•≡</button>
+      </div>
+
+    </div>
+
+    <!-- Main editing area -->
+    <div class="editor-main">
+    <!-- Title -->
+    <div class="title-area">
+      <textarea id="article-title" rows="2" placeholder="请输入文章标题…"></textarea>
+    </div>
+
+    <!-- Editable Content -->
+    <div id="editor" contenteditable="true" spellcheck="false"></div>
+
+    <!-- Actions -->
+    <div class="actions-bar">
+      <button class="action-btn primary" onclick="copyForWechat()">📋 复制公众号内容</button>
+      <button class="action-btn secondary" onclick="clearAll()">🗑 清空</button>
+      <button class="action-btn secondary" onclick="loadDemo()">💡 加载示例</button>
+    </div>
+    </div>
+  </div>
+
+  <!-- ══════════ RIGHT: PREVIEW ══════════ -->
+  <div class="preview-panel">
+    <div class="preview-header">
+      <div class="dot"></div>
+      手机预览（微信公众号效果）
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-frame">
+        <div class="phone-status">
+          <span>9:41</span><span>📶 🔋</span>
+        </div>
+        <div class="wechat-meta">
+          <div class="avatar"></div>
+          <div>
+            <div style="font-size:13px;color:#333;font-weight:600" id="prev-gzh-name">公众号名称</div>
+            <div style="font-size:11px;color:#aaa">刚刚</div>
+          </div>
+        </div>
+        <div class="wechat-article-view" id="preview-area">
+          <p style="color:#ccc;font-size:14px;text-align:center;padding:40px 0">预览区域</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════ IMAGE MODAL ══════════ -->
+<div class="modal-overlay" id="img-modal">
+  <div class="modal">
+    <h3>插入图片</h3>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('url')">网络图片 URL</button>
+      <button class="modal-tab" onclick="switchTab('upload')">本地上传</button>
+    </div>
+
+    <div class="modal-tab-content active" id="tab-url">
+      <label>图片 URL 地址</label>
+      <input type="url" id="img-url" placeholder="https://example.com/image.jpg">
+      <label>图片描述（alt 文字，可选）</label>
+      <input type="text" id="img-alt" placeholder="图片描述">
+    </div>
+
+    <div class="modal-tab-content" id="tab-upload">
+      <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div style="font-size:32px;margin-bottom:8px">📁</div>
+        <div>点击选择图片（可多选）</div>
+        <div style="font-size:12px;margin-top:4px">支持 JPG、PNG、GIF、WebP，可一次选多张</div>
+      </div>
+      <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFileUpload(this)">
+      <div id="upload-preview" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="action-btn secondary" onclick="closeImgModal()">取消</button>
+      <button class="action-btn primary" onclick="insertImage()">插入图片</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const editor = document.getElementById('editor');
+  const titleEl = document.getElementById('article-title');
+  const previewArea = document.getElementById('preview-area');
+  let savedRange = null;
+  let pendingImgSrc = '';
+  let activeTab = 'url';
+
+  // ── Live preview sync ──
+  function syncPreview() {
+    const titleHtml = titleEl.value
+      ? `<h1 class="art-title">${titleEl.value}</h1>`
+      : '';
+    previewArea.innerHTML = titleHtml + editor.innerHTML;
+    // Ensure all imgs fill width
+    previewArea.querySelectorAll('img').forEach(img => {
+      img.style.width = '100%';
+      img.style.height = 'auto';
+    });
+  }
+
+  editor.addEventListener('input', syncPreview);
+  titleEl.addEventListener('input', syncPreview);
+
+  // ── Save/restore selection ──
+  editor.addEventListener('mouseup', saveRange);
+  editor.addEventListener('keyup', saveRange);
+  function saveRange() {
+    const sel = window.getSelection();
+    if (sel.rangeCount) savedRange = sel.getRangeAt(0).cloneRange();
+  }
+  function restoreRange() {
+    if (!savedRange) return;
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+
+  // ── execCommand wrapper ──
+  function execCmd(cmd, value = null) {
+    editor.focus();
+    document.execCommand(cmd, false, value);
+    syncPreview();
+  }
+
+  function applyColor(color) {
+    restoreRange();
+    execCmd('foreColor', color);
+  }
+  function applyBg(color) {
+    restoreRange();
+    execCmd('hiliteColor', color);
+  }
+  function applyFontSize(px) {
+    if (!px) return;
+    restoreRange();
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    const span = document.createElement('span');
+    span.style.fontSize = px;
+    try { range.surroundContents(span); }
+    catch(e) {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+    }
+    syncPreview();
+  }
+  function applyBlock(tag) {
+    execCmd('formatBlock', tag);
+  }
+
+  function insertDivider() {
+    editor.focus();
+    const hr = document.createElement('hr');
+    hr.style.cssText = 'border:none;border-top:1px solid #ddd;margin:16px 0;';
+    const sel = window.getSelection();
+    if (sel.rangeCount) {
+      const range = sel.getRangeAt(0);
+      range.collapse(false);
+      range.insertNode(hr);
+      range.setStartAfter(hr);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    syncPreview();
+  }
+
+  // ── Image modal ──
+  function openImgModal() {
+    saveRange();
+    pendingImgSrc = '';
+    pendingImgSrcs = [];
+    document.getElementById('img-url').value = '';
+    document.getElementById('img-alt').value = '';
+    document.getElementById('upload-preview').innerHTML = '';
+    document.getElementById('img-modal').classList.add('open');
+  }
+  function closeImgModal() {
+    document.getElementById('img-modal').classList.remove('open');
+  }
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.modal-tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'url') || (i === 1 && tab === 'upload'));
+    });
+    document.getElementById('tab-url').classList.toggle('active', tab === 'url');
+    document.getElementById('tab-upload').classList.toggle('active', tab === 'upload');
+  }
+  let pendingImgSrcs = []; // multiple images
+
+  function handleFileUpload(input) {
+    const files = Array.from(input.files);
+    if (!files.length) return;
+    pendingImgSrcs = [];
+    const preview = document.getElementById('upload-preview');
+    preview.innerHTML = '';
+    files.forEach((file, idx) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        pendingImgSrcs[idx] = e.target.result;
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;';
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #ddd;';
+        const del = document.createElement('button');
+        del.textContent = '×';
+        del.style.cssText = 'position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#e8452a;color:white;border:none;cursor:pointer;font-size:12px;line-height:18px;padding:0;text-align:center;';
+        del.onclick = () => { pendingImgSrcs[idx] = null; wrap.remove(); };
+        wrap.appendChild(img);
+        wrap.appendChild(del);
+        preview.appendChild(wrap);
+      };
+      reader.readAsDataURL(file);
+    });
+    // reset so same files can be re-selected
+    input.value = '';
+  }
+
+  function insertImage() {
+    if (activeTab === 'url') {
+      const src = document.getElementById('img-url').value.trim();
+      if (!src) { showToast('请提供图片链接'); return; }
+      const alt = document.getElementById('img-alt').value || '图片';
+      insertSingleImg(src, alt);
+      closeImgModal();
+      syncPreview();
+      showToast('图片已插入 ✓');
+      return;
+    }
+    // upload tab: insert all pending images
+    const srcs = pendingImgSrcs.filter(Boolean);
+    if (!srcs.length) { showToast('请先选择图片'); return; }
+    restoreRange();
+    editor.focus();
+    srcs.forEach(src => insertSingleImg(src, '图片'));
+    closeImgModal();
+    syncPreview();
+    showToast(`已插入 ${srcs.length} 张图片 ✓`);
+  }
+
+  function insertSingleImg(src, alt) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = alt;
+    img.style.cssText = 'width:100%;height:auto;display:block;margin:12px 0;';
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount) {
+      const range = sel.getRangeAt(0);
+      range.collapse(false);
+      range.insertNode(img);
+      range.setStartAfter(img);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else {
+      editor.appendChild(img);
+    }
+  }
+  // Close modal on overlay click
+  document.getElementById('img-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeImgModal();
+  });
+
+  // ── Copy for WeChat ──
+  function copyForWechat() {
+    const titleHtml = titleEl.value
+      ? `<h1 style="font-size:22px;font-weight:700;line-height:1.5;margin-bottom:16px;color:#111;">${titleEl.value}</h1>`
+      : '';
+    // Inline all styles for WeChat compatibility
+    const content = editor.innerHTML
+      .replace(/<img /g, '<img style="width:100%;height:auto;display:block;margin:10px 0;" ');
+    const fullHtml = titleHtml + content;
+
+    if (navigator.clipboard && window.ClipboardItem) {
+      const blob = new Blob([fullHtml], { type: 'text/html' });
+      const plainText = new Blob([titleEl.value + '\n\n' + editor.innerText], { type: 'text/plain' });
+      navigator.clipboard.write([
+        new ClipboardItem({ 'text/html': blob, 'text/plain': plainText })
+      ]).then(() => showToast('已复制富文本，可直接粘贴到公众号编辑器 ✓'))
+        .catch(() => fallbackCopy(fullHtml));
+    } else {
+      fallbackCopy(fullHtml);
+    }
+  }
+  function fallbackCopy(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(tmp);
+    const range = document.createRange();
+    range.selectNodeContents(tmp);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    try {
+      document.execCommand('copy');
+      showToast('已复制，可粘贴到公众号编辑器 ✓');
+    } catch(e) {
+      showToast('请手动 Ctrl+A 全选后复制');
+    }
+    document.body.removeChild(tmp);
+    sel.removeAllRanges();
+  }
+
+  // ── Clear ──
+  function clearAll() {
+    if (!confirm('确定要清空所有内容吗？')) return;
+    titleEl.value = '';
+    editor.innerHTML = '';
+    syncPreview();
+  }
+
+  // ── Demo ──
+  function loadDemo() {
+    titleEl.value = '春日限定 | 这 5 款茶饮，喝一口就到了江南';
+    editor.innerHTML = `
+<h2>🍃 春天的茶，是一首诗</h2>
+<p>当第一缕春风拂过茶园，嫩芽破土而出，那是一年中最珍贵的时光。<strong style="color:#e8452a;">今年春茶季</strong>，我们为你精选了五款代表性茶饮，每一口都是对江南春日的致敬。</p>
+<img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=800&q=80" alt="茶园春色" style="width:100%;height:auto;display:block;margin:12px 0;">
+<h2>01. 碧螺春：苏州的少女心</h2>
+<p>碧螺春产自苏州洞庭山，采摘于清明前后，条索纤细、卷曲如螺。<span style="background:#fff9c4;">每斤干茶需要 6 万余颗嫩芽</span>，是中国十大名茶中采摘最精细的品种之一。</p>
+<blockquote>「入山无处不飞翠，碧螺春香百里醉」—— 清·康熙</blockquote>
+<p>冲泡时水温控制在 <strong>75–80°C</strong>，玻璃杯中先注水再投茶，看茶叶徐徐沉落，如绿雪飘飞。</p>
+<img src="https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=800&q=80" alt="碧螺春茶汤" style="width:100%;height:auto;display:block;margin:12px 0;">
+<h2>02. 龙井：西湖的一抹绿</h2>
+<p>西湖龙井，扁平挺秀，色泽翠绿，有"色绿、香郁、味甘、形美"四绝之称。明前龙井更是茶中极品，价格每年攀升，但那清鲜的豆花香，让人魂牵梦萦。</p>
+<hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+<h3>📌 购买小贴士</h3>
+<p>购买春茶时，建议认准<span style="color:#1a8a3a;font-weight:700;">产地直销</span>渠道，避免中间商溢价。可扫码关注我们，获取今年春茶预订链接。</p>
+`;
+    syncPreview();
+    showToast('示例内容已加载 ✓');
+  }
+
+  // ── Toast ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // Initial sync
+  syncPreview();
+</script>
+</body>
+</html>

@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlideStudio — 幻灯片编辑器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Sora:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --panel: #1a1a24;
+    --panel2: #22222e;
+    --border: #2e2e3e;
+    --accent: #5b6af5;
+    --accent2: #a78bfa;
+    --text: #e8e8f0;
+    --text2: #8888a8;
+    --red: #f87171;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  #topbar .logo {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent2);
+    margin-right: 16px;
+    letter-spacing: -0.5px;
+  }
+  .tb-sep { width: 1px; height: 24px; background: var(--border); margin: 0 6px; }
+  .tb-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius);
+    border: none; background: transparent; color: var(--text2);
+    font-size: 13px; cursor: pointer; transition: all .15s;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .tb-btn:hover { background: var(--panel2); color: var(--text); }
+  .tb-btn.active { background: var(--accent); color: #fff; }
+  .tb-btn svg { flex-shrink: 0; }
+
+  /* ── WORKSPACE ── */
+  #workspace {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  #left-panel {
+    width: 220px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  #left-panel h3 {
+    padding: 14px 16px 10px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text2);
+    font-weight: 500;
+  }
+  .panel-section {
+    padding: 0 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 9px 10px;
+    border-radius: var(--radius); border: none;
+    background: transparent; color: var(--text);
+    font-size: 13px; cursor: pointer; transition: all .15s;
+    font-family: 'Noto Sans SC', sans-serif;
+    text-align: left;
+  }
+  .panel-btn:hover { background: var(--panel2); }
+  .panel-btn .icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .panel-btn .icon.blue { background: rgba(91,106,245,.2); color: var(--accent); }
+  .panel-btn .icon.purple { background: rgba(167,139,250,.2); color: var(--accent2); }
+  .panel-btn .icon.green { background: rgba(74,222,128,.2); color: var(--green); }
+  .panel-btn .icon.yellow { background: rgba(251,191,36,.2); color: var(--yellow); }
+  .panel-btn .icon.red { background: rgba(248,113,113,.2); color: var(--red); }
+
+  /* bg section */
+  #bg-section { padding: 12px; }
+  #bg-section label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 6px; }
+  #bg-color-input {
+    width: 100%; height: 36px; border-radius: var(--radius);
+    border: 1px solid var(--border); cursor: pointer;
+    background: transparent;
+  }
+  #bg-img-btn {
+    margin-top: 8px; width: 100%;
+    padding: 8px; border-radius: var(--radius);
+    border: 1px dashed var(--border);
+    background: transparent; color: var(--text2);
+    font-size: 12px; cursor: pointer;
+    transition: all .15s; font-family: 'Noto Sans SC', sans-serif;
+  }
+  #bg-img-btn:hover { border-color: var(--accent); color: var(--accent); }
+  #bg-img-clear {
+    margin-top: 6px; width: 100%;
+    padding: 6px; border-radius: var(--radius);
+    border: none; background: rgba(248,113,113,.1);
+    color: var(--red); font-size: 12px; cursor: pointer;
+    font-family: 'Noto Sans SC', sans-serif; display: none;
+  }
+  #bg-img-clear:hover { background: rgba(248,113,113,.2); }
+
+  /* ── CANVAS AREA ── */
+  #canvas-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #090910;
+    overflow: auto;
+    padding: 40px;
+    position: relative;
+  }
+  #slide {
+    width: 960px;
+    height: 540px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,.6);
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+  }
+
+  /* ── ELEMENTS ── */
+  .slide-el {
+    position: absolute;
+    cursor: move;
+    outline: none;
+  }
+  .slide-el.selected > .el-content {
+    outline: 2px solid var(--accent);
+  }
+  .slide-el .el-content {
+    width: 100%; height: 100%;
+    position: relative;
+  }
+  .slide-el img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+  .slide-el .text-inner {
+    width: 100%; height: 100%;
+    outline: none;
+    overflow: hidden;
+    word-break: break-word;
+    cursor: text;
+  }
+
+  /* resize handles */
+  .resize-handle {
+    position: absolute;
+    width: 10px; height: 10px;
+    background: #fff;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    z-index: 10;
+  }
+  .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+  .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+  .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+  .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+  .resize-handle.n  { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+  .resize-handle.s  { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+  .resize-handle.e  { right: -5px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+  .resize-handle.w  { left: -5px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+
+  /* ── RIGHT PANEL ── */
+  #right-panel {
+    width: 240px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  #right-panel h3 {
+    padding: 14px 16px 10px;
+    font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text2);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0;
+  }
+  .prop-section {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .prop-section h4 { font-size: 11px; color: var(--text2); margin-bottom: 10px; font-weight: 500; }
+  .prop-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .prop-row label { font-size: 12px; color: var(--text2); min-width: 36px; }
+  .prop-input {
+    flex: 1; padding: 5px 8px;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 5px; color: var(--text); font-size: 12px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .prop-input:focus { outline: none; border-color: var(--accent); }
+  select.prop-input { cursor: pointer; }
+  .prop-color {
+    width: 32px; height: 28px;
+    border-radius: 5px; border: 1px solid var(--border);
+    cursor: pointer; background: transparent; padding: 2px;
+  }
+  .font-style-row {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .style-btn {
+    padding: 5px 10px;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 5px; color: var(--text2);
+    font-size: 12px; cursor: pointer; transition: all .15s;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .style-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .style-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .no-selection {
+    padding: 40px 20px; text-align: center;
+    color: var(--text2); font-size: 13px; line-height: 1.7;
+  }
+  .no-selection svg { opacity: .3; margin-bottom: 12px; }
+  .delete-btn {
+    width: calc(100% - 28px); margin: 14px;
+    padding: 8px; border-radius: var(--radius);
+    border: none; background: rgba(248,113,113,.1);
+    color: var(--red); font-size: 13px; cursor: pointer;
+    font-family: 'Noto Sans SC', sans-serif; transition: all .15s;
+  }
+  .delete-btn:hover { background: rgba(248,113,113,.25); }
+
+  /* tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #000; color: #fff; font-size: 11px;
+    padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+    pointer-events: none; z-index: 999;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* export hint */
+  #hint {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 6px 16px; font-size: 11px; color: var(--text2);
+    pointer-events: none; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span class="logo">✦ SlideStudio</span>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="addText()" data-tip="添加文字">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h8M4 18h12"/></svg>
+    添加文字
+  </button>
+  <button class="tb-btn" onclick="triggerImageUpload()" data-tip="添加图片">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+    添加图片
+  </button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="exportSlide()" data-tip="导出为PNG">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    导出 PNG
+  </button>
+  <button class="tb-btn" onclick="clearSlide()" data-tip="清空页面">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    清空
+  </button>
+  <button class="tb-btn" onclick="undoAction()" data-tip="撤销 Ctrl+Z">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+    撤销
+  </button>
+</div>
+
+<!-- WORKSPACE -->
+<div id="workspace">
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <h3>插入元素</h3>
+    <div class="panel-section">
+      <button class="panel-btn" onclick="addText()">
+        <span class="icon blue">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h8M4 18h12"/></svg>
+        </span>
+        文字
+      </button>
+      <button class="panel-btn" onclick="triggerImageUpload()">
+        <span class="icon purple">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        </span>
+        图片
+      </button>
+      <button class="panel-btn" onclick="addShape('rect')">
+        <span class="icon green">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        </span>
+        矩形
+      </button>
+      <button class="panel-btn" onclick="addShape('circle')">
+        <span class="icon yellow">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+        </span>
+        圆形
+      </button>
+    </div>
+
+    <h3 style="padding-top:14px">背景设置</h3>
+    <div id="bg-section">
+      <label>背景颜色</label>
+      <input type="color" id="bg-color-input" value="#ffffff" onchange="setBgColor(this.value)">
+      <button id="bg-img-btn" onclick="triggerBgUpload()">
+        ＋ 设置背景图片
+      </button>
+      <button id="bg-img-clear" onclick="clearBgImage()">✕ 移除背景图片</button>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-area">
+    <div id="slide" onclick="handleSlideClick(event)"></div>
+    <div id="hint">点击空白处取消选择 · 双击文字编辑 · 拖拽调整位置</div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <h3>属性</h3>
+    <div id="props-placeholder" class="no-selection">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M9 9h6M9 12h6M9 15h4"/>
+      </svg>
+      选中一个元素<br>查看和编辑其属性
+    </div>
+    <div id="props-panel" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- Hidden inputs -->
+<input type="file" id="img-upload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+<input type="file" id="bg-upload" accept="image/*" style="display:none" onchange="handleBgUpload(event)">
+
+<script>
+// ── STATE ──
+let selectedEl = null;
+let elCounter = 0;
+let history = [];
+let isDragging = false;
+let isResizing = false;
+let dragStart = {};
+let resizeData = {};
+
+const slide = document.getElementById('slide');
+
+// ── HISTORY ──
+function saveState() {
+  history.push(slide.innerHTML);
+  if (history.length > 30) history.shift();
+}
+
+function undoAction() {
+  if (history.length === 0) return;
+  const prev = history.pop();
+  selectElement(null);
+  slide.innerHTML = prev;
+  // rebind events
+  slide.querySelectorAll('.slide-el').forEach(el => bindElement(el));
+}
+
+// ── ADD ELEMENTS ──
+function addText() {
+  saveState();
+  const el = createEl('text', 15, 15, 400, 55);
+  const inner = el.querySelector('.text-inner');
+  inner.textContent = '标题文字';
+  inner.style.cssText = 'font-size:48px;color:#ffffff;font-family:"Noto Sans SC",sans-serif;font-weight:700;text-align:left;line-height:1.3;';
+  slide.appendChild(el);
+  bindElement(el);
+  selectElement(el);
+}
+
+function triggerImageUpload() {
+  document.getElementById('img-upload').click();
+}
+
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    saveState();
+    const el = createEl('image', 15, 85, 930, 535);
+    const img = document.createElement('img');
+    img.src = ev.target.result;
+    img.draggable = false;
+    el.querySelector('.el-content').appendChild(img);
+    slide.appendChild(el);
+    bindElement(el);
+    selectElement(el);
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function addShape(type) {
+  saveState();
+  const el = createEl('shape', 200, 150, 180, 120);
+  const content = el.querySelector('.el-content');
+  const shape = document.createElement('div');
+  shape.style.cssText = `width:100%;height:100%;background:rgba(91,106,245,0.7);${type === 'circle' ? 'border-radius:50%;' : 'border-radius:6px;'}`;
+  shape.dataset.shapeEl = '1';
+  content.appendChild(shape);
+  el.dataset.shapeType = type;
+  slide.appendChild(el);
+  bindElement(el);
+  selectElement(el);
+}
+
+function createEl(type, x, y, w, h) {
+  const el = document.createElement('div');
+  el.className = 'slide-el';
+  el.id = 'el-' + (++elCounter);
+  el.dataset.type = type;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.width = w + 'px';
+  el.style.height = h + 'px';
+
+  const content = document.createElement('div');
+  content.className = 'el-content';
+
+  if (type === 'text') {
+    const inner = document.createElement('div');
+    inner.className = 'text-inner';
+    inner.contentEditable = 'false';
+    content.appendChild(inner);
+  }
+
+  el.appendChild(content);
+
+  // resize handles
+  ['nw','n','ne','e','se','s','sw','w'].forEach(dir => {
+    const h = document.createElement('div');
+    h.className = 'resize-handle ' + dir;
+    h.dataset.dir = dir;
+    el.appendChild(h);
+  });
+
+  return el;
+}
+
+// ── BIND EVENTS ──
+function bindElement(el) {
+  el.addEventListener('mousedown', onElMouseDown);
+  el.querySelectorAll('.resize-handle').forEach(h => {
+    h.addEventListener('mousedown', onResizeMouseDown);
+  });
+  if (el.dataset.type === 'text') {
+    el.addEventListener('dblclick', () => {
+      const inner = el.querySelector('.text-inner');
+      inner.contentEditable = 'true';
+      inner.focus();
+    });
+    el.querySelector('.text-inner').addEventListener('blur', () => {
+      el.querySelector('.text-inner').contentEditable = 'false';
+    });
+  }
+  // Show/hide handles based on selection
+  updateHandles(el);
+}
+
+function updateHandles(el) {
+  const selected = el.classList.contains('selected');
+  el.querySelectorAll('.resize-handle').forEach(h => {
+    h.style.display = selected ? 'block' : 'none';
+  });
+}
+
+// ── DRAG ──
+function onElMouseDown(e) {
+  if (e.target.classList.contains('resize-handle')) return;
+  const el = e.currentTarget;
+  selectElement(el);
+
+  // allow text editing click through
+  if (el.dataset.type === 'text' && el.querySelector('.text-inner').contentEditable === 'true') return;
+
+  isDragging = true;
+  dragStart = {
+    mx: e.clientX, my: e.clientY,
+    ox: parseInt(el.style.left), oy: parseInt(el.style.top),
+    el
+  };
+  e.preventDefault();
+}
+
+document.addEventListener('mousemove', e => {
+  if (isDragging) {
+    const dx = e.clientX - dragStart.mx;
+    const dy = e.clientY - dragStart.my;
+    const el = dragStart.el;
+    const newX = Math.max(0, Math.min(slide.offsetWidth - el.offsetWidth, dragStart.ox + dx));
+    const newY = Math.max(0, Math.min(slide.offsetHeight - el.offsetHeight, dragStart.oy + dy));
+    el.style.left = newX + 'px';
+    el.style.top = newY + 'px';
+    updatePropsPosition(el);
+  }
+  if (isResizing) {
+    doResize(e);
+  }
+});
+
+document.addEventListener('mouseup', e => {
+  if (isDragging) { saveState(); isDragging = false; }
+  if (isResizing) { saveState(); isResizing = false; }
+});
+
+// ── RESIZE ──
+function onResizeMouseDown(e) {
+  e.stopPropagation();
+  const handle = e.currentTarget;
+  const el = handle.closest('.slide-el');
+  isResizing = true;
+  resizeData = {
+    dir: handle.dataset.dir,
+    mx: e.clientX, my: e.clientY,
+    ox: parseInt(el.style.left), oy: parseInt(el.style.top),
+    ow: el.offsetWidth, oh: el.offsetHeight,
+    el
+  };
+  e.preventDefault();
+}
+
+function doResize(e) {
+  const {dir, mx, my, ox, oy, ow, oh, el} = resizeData;
+  const dx = e.clientX - mx;
+  const dy = e.clientY - my;
+  let nx = ox, ny = oy, nw = ow, nh = oh;
+
+  if (dir.includes('e')) nw = Math.max(40, ow + dx);
+  if (dir.includes('s')) nh = Math.max(30, oh + dy);
+  if (dir.includes('w')) { nw = Math.max(40, ow - dx); nx = ox + ow - nw; }
+  if (dir.includes('n')) { nh = Math.max(30, oh - dy); ny = oy + oh - nh; }
+
+  el.style.left = nx + 'px';
+  el.style.top  = ny + 'px';
+  el.style.width  = nw + 'px';
+  el.style.height = nh + 'px';
+  updatePropsPosition(el);
+}
+
+// ── SELECT ──
+function selectElement(el) {
+  if (selectedEl && selectedEl !== el) {
+    selectedEl.classList.remove('selected');
+    updateHandles(selectedEl);
+  }
+  selectedEl = el;
+  if (el) {
+    el.classList.add('selected');
+    updateHandles(el);
+    renderProps(el);
+  } else {
+    document.getElementById('props-placeholder').style.display = '';
+    document.getElementById('props-panel').style.display = 'none';
+  }
+}
+
+function handleSlideClick(e) {
+  if (e.target === slide) selectElement(null);
+}
+
+// ── PROPERTIES PANEL ──
+function renderProps(el) {
+  const panel = document.getElementById('props-panel');
+  const ph = document.getElementById('props-placeholder');
+  ph.style.display = 'none';
+  panel.style.display = 'block';
+  panel.innerHTML = '';
+
+  const type = el.dataset.type;
+
+  // Position & size
+  const posSection = document.createElement('div');
+  posSection.className = 'prop-section';
+  posSection.id = 'prop-pos';
+  posSection.innerHTML = `
+    <h4>位置 & 大小</h4>
+    <div class="prop-row"><label>X</label><input class="prop-input" id="px" type="number" value="${parseInt(el.style.left)}" onchange="setProp('x', this.value)"></div>
+    <div class="prop-row"><label>Y</label><input class="prop-input" id="py" type="number" value="${parseInt(el.style.top)}" onchange="setProp('y', this.value)"></div>
+    <div class="prop-row"><label>宽</label><input class="prop-input" id="pw" type="number" value="${el.offsetWidth}" onchange="setProp('w', this.value)"></div>
+    <div class="prop-row"><label>高</label><input class="prop-input" id="ph2" type="number" value="${el.offsetHeight}" onchange="setProp('h', this.value)"></div>
+  `;
+  panel.appendChild(posSection);
+
+  if (type === 'text') {
+    const inner = el.querySelector('.text-inner');
+    const cs = window.getComputedStyle(inner);
+    const textSection = document.createElement('div');
+    textSection.className = 'prop-section';
+    textSection.innerHTML = `
+      <h4>文字样式</h4>
+      <div class="prop-row">
+        <label>字体</label>
+        <select class="prop-input" id="p-font" onchange="setTextProp('fontFamily', this.value)">
+          <option value="'Noto Sans SC',sans-serif">Noto Sans SC</option>
+          <option value="'Sora',sans-serif">Sora</option>
+          <option value="Georgia,serif">Georgia</option>
+          <option value="'Courier New',monospace">Courier New</option>
+          <option value="Impact,sans-serif">Impact</option>
+        </select>
+      </div>
+      <div class="prop-row">
+        <label>大小</label>
+        <input class="prop-input" id="p-size" type="number" value="${parseInt(cs.fontSize)||24}" onchange="setTextProp('fontSize', this.value + 'px')">
+      </div>
+      <div class="prop-row">
+        <label>颜色</label>
+        <input type="color" class="prop-color" id="p-color" value="${rgbToHex(cs.color)||'#222222'}" oninput="setTextProp('color', this.value)">
+        <select class="prop-input" id="p-align" onchange="setTextProp('textAlign', this.value)">
+          <option value="left">左对齐</option>
+          <option value="center">居中</option>
+          <option value="right">右对齐</option>
+        </select>
+      </div>
+      <div class="prop-row" style="margin-top:4px">
+        <label>行高</label>
+        <input class="prop-input" type="number" step="0.1" value="${parseFloat(cs.lineHeight)||1.4}" onchange="setTextProp('lineHeight', this.value)">
+      </div>
+      <div class="font-style-row" style="margin-top:6px">
+        <button class="style-btn ${cs.fontWeight>=700?'active':''}" id="s-bold" onclick="toggleTextStyle('bold')"><b>B</b></button>
+        <button class="style-btn ${cs.fontStyle==='italic'?'active':''}" id="s-italic" onclick="toggleTextStyle('italic')"><i>I</i></button>
+        <button class="style-btn ${cs.textDecoration.includes('underline')?'active':''}" id="s-under" onclick="toggleTextStyle('underline')"><u>U</u></button>
+        <button class="style-btn ${cs.textDecoration.includes('line-through')?'active':''}" id="s-strike" onclick="toggleTextStyle('strike')"><s>S</s></button>
+      </div>
+    `;
+    panel.appendChild(textSection);
+    // set current font
+    setTimeout(() => {
+      const fontEl = document.getElementById('p-font');
+      if (fontEl) fontEl.value = inner.style.fontFamily || "'Noto Sans SC',sans-serif";
+      const alignEl = document.getElementById('p-align');
+      if (alignEl) alignEl.value = inner.style.textAlign || 'left';
+    }, 0);
+  }
+
+  if (type === 'shape') {
+    const shapeEl = el.querySelector('[data-shape-el]');
+    const section = document.createElement('div');
+    section.className = 'prop-section';
+    section.innerHTML = `
+      <h4>形状样式</h4>
+      <div class="prop-row">
+        <label>填充</label>
+        <input type="color" class="prop-color" value="#5b6af5" oninput="setShapeColor(this.value, 1)">
+      </div>
+      <div class="prop-row">
+        <label>透明度</label>
+        <input class="prop-input" type="range" min="0" max="1" step="0.05" value="0.7" oninput="setShapeOpacity(this.value)">
+      </div>
+      <div class="prop-row">
+        <label>圆角</label>
+        <input class="prop-input" type="number" value="${el.dataset.shapeType==='circle'?9999:6}" onchange="setShapeBorderRadius(this.value)">
+      </div>
+    `;
+    panel.appendChild(section);
+  }
+
+  // opacity for all
+  const opSection = document.createElement('div');
+  opSection.className = 'prop-section';
+  const currOp = parseFloat(el.style.opacity) || 1;
+  opSection.innerHTML = `
+    <h4>透明度</h4>
+    <div class="prop-row">
+      <input class="prop-input" type="range" min="0" max="1" step="0.05" value="${currOp}" oninput="setElOpacity(this.value)">
+      <span id="op-val" style="font-size:12px;color:var(--text2);min-width:34px">${Math.round(currOp*100)}%</span>
+    </div>
+  `;
+  panel.appendChild(opSection);
+
+  // z-index
+  const zSection = document.createElement('div');
+  zSection.className = 'prop-section';
+  zSection.innerHTML = `
+    <h4>层级</h4>
+    <div class="prop-row" style="gap:6px">
+      <button class="style-btn" style="flex:1" onclick="changeZ(1)">↑ 上移</button>
+      <button class="style-btn" style="flex:1" onclick="changeZ(-1)">↓ 下移</button>
+    </div>
+    <div class="prop-row" style="gap:6px;margin-top:4px">
+      <button class="style-btn" style="flex:1" onclick="changeZ(999)">置顶</button>
+      <button class="style-btn" style="flex:1" onclick="changeZ(-999)">置底</button>
+    </div>
+  `;
+  panel.appendChild(zSection);
+
+  // delete
+  const delBtn = document.createElement('button');
+  delBtn.className = 'delete-btn';
+  delBtn.innerHTML = '🗑 删除此元素';
+  delBtn.onclick = deleteSelected;
+  panel.appendChild(delBtn);
+}
+
+function updatePropsPosition(el) {
+  const px = document.getElementById('px');
+  const py = document.getElementById('py');
+  const pw = document.getElementById('pw');
+  const ph2 = document.getElementById('ph2');
+  if (px) px.value = parseInt(el.style.left);
+  if (py) py.value = parseInt(el.style.top);
+  if (pw) pw.value = el.offsetWidth;
+  if (ph2) ph2.value = el.offsetHeight;
+}
+
+function setProp(prop, val) {
+  if (!selectedEl) return;
+  val = parseFloat(val);
+  if (isNaN(val)) return;
+  if (prop === 'x') selectedEl.style.left = val + 'px';
+  if (prop === 'y') selectedEl.style.top = val + 'px';
+  if (prop === 'w') selectedEl.style.width = val + 'px';
+  if (prop === 'h') selectedEl.style.height = val + 'px';
+}
+
+function setTextProp(prop, val) {
+  if (!selectedEl) return;
+  selectedEl.querySelector('.text-inner').style[prop] = val;
+}
+
+function toggleTextStyle(style) {
+  if (!selectedEl) return;
+  const inner = selectedEl.querySelector('.text-inner');
+  const cs = window.getComputedStyle(inner);
+  if (style === 'bold') {
+    inner.style.fontWeight = cs.fontWeight >= 700 ? '400' : '700';
+    document.getElementById('s-bold').classList.toggle('active');
+  } else if (style === 'italic') {
+    inner.style.fontStyle = cs.fontStyle === 'italic' ? 'normal' : 'italic';
+    document.getElementById('s-italic').classList.toggle('active');
+  } else if (style === 'underline') {
+    const has = cs.textDecoration.includes('underline');
+    inner.style.textDecoration = has ? 'none' : 'underline';
+    document.getElementById('s-under').classList.toggle('active');
+  } else if (style === 'strike') {
+    const has = cs.textDecoration.includes('line-through');
+    inner.style.textDecoration = has ? 'none' : 'line-through';
+    document.getElementById('s-strike').classList.toggle('active');
+  }
+}
+
+function setShapeColor(val) {
+  if (!selectedEl) return;
+  const s = selectedEl.querySelector('[data-shape-el]');
+  if (s) s.style.background = val;
+}
+
+function setShapeOpacity(val) {
+  if (!selectedEl) return;
+  const s = selectedEl.querySelector('[data-shape-el]');
+  if (s) {
+    const color = s.style.background || 'rgba(91,106,245,0.7)';
+    s.style.opacity = val;
+  }
+}
+
+function setShapeBorderRadius(val) {
+  if (!selectedEl) return;
+  const s = selectedEl.querySelector('[data-shape-el]');
+  if (s) s.style.borderRadius = val + 'px';
+}
+
+function setElOpacity(val) {
+  if (!selectedEl) return;
+  selectedEl.style.opacity = val;
+  const v = document.getElementById('op-val');
+  if (v) v.textContent = Math.round(val*100) + '%';
+}
+
+function changeZ(delta) {
+  if (!selectedEl) return;
+  const cur = parseInt(selectedEl.style.zIndex) || 1;
+  if (delta === 999) selectedEl.style.zIndex = 9999;
+  else if (delta === -999) selectedEl.style.zIndex = 1;
+  else selectedEl.style.zIndex = Math.max(1, cur + delta);
+}
+
+function deleteSelected() {
+  if (!selectedEl) return;
+  saveState();
+  selectedEl.remove();
+  selectedEl = null;
+  document.getElementById('props-placeholder').style.display = '';
+  document.getElementById('props-panel').style.display = 'none';
+}
+
+// ── BACKGROUND ──
+function setBgColor(val) {
+  slide.style.backgroundColor = val;
+}
+
+function triggerBgUpload() {
+  document.getElementById('bg-upload').click();
+}
+
+function handleBgUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    slide.style.backgroundImage = `url(${ev.target.result})`;
+    slide.style.backgroundSize = 'cover';
+    document.getElementById('bg-img-clear').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function clearBgImage() {
+  slide.style.backgroundImage = '';
+  document.getElementById('bg-img-clear').style.display = 'none';
+}
+
+// ── CLEAR ──
+function clearSlide() {
+  if (!confirm('确定要清空所有内容吗？')) return;
+  saveState();
+  selectElement(null);
+  slide.querySelectorAll('.slide-el').forEach(el => el.remove());
+}
+
+// ── EXPORT ──
+function exportSlide() {
+  // Using html2canvas via script injection
+  if (!window.html2canvas) {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => doExport();
+    document.head.appendChild(s);
+  } else {
+    doExport();
+  }
+}
+
+function doExport() {
+  // Deselect first
+  const prev = selectedEl;
+  if (prev) { prev.classList.remove('selected'); prev.querySelectorAll('.resize-handle').forEach(h => h.style.display = 'none'); }
+  html2canvas(slide, { scale: 2, useCORS: true, backgroundColor: null }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'slide.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    // Reselect
+    if (prev) { prev.classList.add('selected'); prev.querySelectorAll('.resize-handle').forEach(h => h.style.display = 'block'); }
+  });
+}
+
+// ── UTILS ──
+function rgbToHex(rgb) {
+  if (!rgb || rgb === 'rgba(0, 0, 0, 0)') return '#222222';
+  const match = rgb.match(/\d+/g);
+  if (!match) return '#222222';
+  return '#' + match.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedEl && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT') {
+      const inner = selectedEl.querySelector('.text-inner');
+      if (!inner || inner.contentEditable !== 'true') {
+        deleteSelected();
+      }
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault();
+    undoAction();
+  }
+});
+
+// Click outside
+document.getElementById('canvas-area').addEventListener('mousedown', e => {
+  if (e.target === document.getElementById('canvas-area')) selectElement(null);
+});
+</script>
+</body>
+</html>
