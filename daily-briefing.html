@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行情简报生成器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --bg:#0c0e14;--s1:#13161f;--s2:#1a1e2a;--s3:#212638;
+  --b1:rgba(255,255,255,.06);--b2:rgba(255,255,255,.11);
+  --gold:#c9a96e;--green:#4ade80;--red:#f87171;
+  --text:#d8dde8;--t2:#7a8296;--t3:#3d4358;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-serif;display:grid;grid-template-columns:340px 1fr;height:100vh}
+
+/* ── Editor ── */
+.ed{background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
+.ed-top{padding:16px 18px 12px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.ed-top h1{font-family:'Noto Serif SC',serif;font-size:14px;font-weight:600;color:var(--gold)}
+.ed-top p{font-size:10px;color:var(--t3);margin-top:2px}
+.ed-body{padding:14px 18px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;flex:1}
+.ed-foot{padding:12px 18px;border-top:1px solid var(--b1);flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+
+.blk-title{font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--t3);margin-bottom:9px;font-weight:500}
+label{font-size:11px;color:var(--t2);display:block;margin-bottom:3px}
+input[type=text],textarea{width:100%;background:var(--bg);border:1px solid var(--b2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s}
+input:focus,textarea:focus{border-color:rgba(201,169,110,.45);box-shadow:0 0 0 2px rgba(201,169,110,.07)}
+textarea{resize:vertical;line-height:1.7}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hr{border:none;border-top:1px solid var(--b1)}
+
+/* watch item in editor */
+.wi{background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:7px;margin-bottom:8px}
+.wi-top{display:flex;gap:6px;align-items:center}
+.wi-top input{font-size:12px}
+.del{background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px;padding:3px 5px;border-radius:4px;transition:color .15s;flex-shrink:0}
+.del:hover{color:var(--red)}
+.wi-body{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wi-body textarea{font-size:11px;min-height:50px}
+
+.add-btn{width:100%;background:var(--bg);border:1px dashed var(--b2);color:var(--t3);border-radius:7px;padding:8px;cursor:pointer;font-size:11px;font-family:inherit;transition:all .2s}
+.add-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+.gen-btn{width:100%;padding:11px;background:linear-gradient(135deg,#b8891a,#8b6310);color:#fff8ec;border:none;border-radius:9px;font-size:13px;font-weight:600;font-family:'Noto Serif SC',serif;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(201,169,110,.2);letter-spacing:.5px}
+.gen-btn:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(201,169,110,.3)}
+.dl-row{display:flex;gap:8px}
+.s-btn{flex:1;padding:9px;background:var(--s2);border:1px solid var(--b2);color:var(--t2);border-radius:8px;font-size:12px;font-family:inherit;cursor:pointer;transition:all .2s}
+.s-btn:hover{background:var(--s3);color:var(--text)}
+
+/* ── Preview ── */
+.pv{overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:28px 20px;background:radial-gradient(ellipse at 50% 0%,rgba(201,169,110,.04),transparent 50%),var(--bg)}
+.pv-label{font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:16px;align-self:flex-start}
+.pv-btns{margin-top:14px;display:flex;gap:8px;width:460px}
+
+/* ════════════════
+   CARD
+════════════════ */
+#card{
+  width:460px;
+  background:#0b0e15;
+  border-radius:16px;overflow:hidden;
+  border:1px solid rgba(201,169,110,.15);
+  box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 0 .5px rgba(201,169,110,.06);
+}
+#card::before{content:'';display:block;height:2px;background:linear-gradient(90deg,transparent,#c9a96e 30%,#c9a96e 70%,transparent)}
+
+/* header */
+.ch{padding:16px 20px 14px;background:linear-gradient(180deg,#111420,#0b0e15);border-bottom:1px solid rgba(255,255,255,.04)}
+.ch-eye{font-size:9px;letter-spacing:1.8px;color:rgba(201,169,110,.5);font-family:'JetBrains Mono',monospace;margin-bottom:5px}
+.ch-title{font-family:'Noto Serif SC',serif;font-size:18px;font-weight:700;color:#e6d5b8;line-height:1.3}
+.ch-meta{margin-top:6px;display:flex;align-items:center;gap:8px}
+.ch-date{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace}
+.ch-tag{font-size:9px;padding:2px 8px;border-radius:3px;background:rgba(201,169,110,.1);color:var(--gold);border:1px solid rgba(201,169,110,.18);letter-spacing:.8px}
+
+/* section shell */
+.cs{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.04)}
+.cs:last-of-type{border-bottom:none}
+.cs-lbl{font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--t3);margin-bottom:10px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px}
+.cs-lbl::after{content:'';flex:1;height:.5px;background:rgba(255,255,255,.05)}
+
+/* watchlist */
+.wl-item{background:#0f1320;border-radius:9px;padding:10px 13px;border:1px solid rgba(255,255,255,.05);margin-bottom:8px}
+.wl-item:last-child{margin-bottom:0}
+.wl-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.wl-sym{font-size:11px;font-family:'JetBrains Mono',monospace;color:#8899bb;flex-shrink:0}
+.wl-name{font-size:13px;font-weight:500;color:#dde6f5;flex:1}
+.wl-price{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.wl-chg{font-size:10px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:500;flex-shrink:0}
+.wl-cols{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.wl-col{background:rgba(255,255,255,.03);border-radius:6px;padding:7px 9px}
+.wl-col-lbl{font-size:9px;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase}
+.wl-col-txt{font-size:11px;line-height:1.65;white-space:pre-line}
+
+/* key points + risks */
+.rk{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rk-box{border-radius:8px;padding:10px 12px}
+.rk-box.bull{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.1)}
+.rk-box.bear{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.1)}
+.rk-lbl{font-size:9px;letter-spacing:1px;margin-bottom:8px;font-weight:500}
+.rk-box.bull .rk-lbl{color:var(--green)}
+.rk-box.bear .rk-lbl{color:var(--red)}
+.rk-box ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+.rk-box li{font-size:11px;color:#8a95a8;line-height:1.55;display:flex;gap:5px}
+.rk-box.bull li::before{content:'▲';color:rgba(74,222,128,.45);font-size:9px;margin-top:2px;flex-shrink:0}
+.rk-box.bear li::before{content:'▼';color:rgba(248,113,113,.45);font-size:9px;margin-top:2px;flex-shrink:0}
+
+/* footer */
+.cf{padding:10px 20px;background:#070910;border-top:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:space-between}
+.cf-brand{font-size:9px;color:rgba(201,169,110,.3);font-family:'JetBrains Mono',monospace;letter-spacing:1px}
+.cf-disc{font-size:9px;color:#1c2230;max-width:220px;line-height:1.4}
+.cf-time{font-size:9px;color:#1c2230;font-family:'JetBrains Mono',monospace}
+
+/* toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--gold);color:#0b0d12;padding:8px 15px;border-radius:8px;font-size:12px;font-weight:600;z-index:999;opacity:0;transform:translateY(6px);transition:all .25s;box-shadow:0 6px 18px rgba(201,169,110,.4)}
+.toast.show{opacity:1;transform:translateY(0)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- EDITOR -->
+<div class="ed">
+  <div class="ed-top">
+    <h1>行情简报生成器</h1>
+    <p>填写 → 预览 → 一键导出图片</p>
+  </div>
+
+  <div class="ed-body">
+
+    <!-- 基本信息 -->
+    <div>
+      <div class="blk-title">基本信息</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div>
+          <label>标题</label>
+          <input type="text" id="f-title" value="A股日报 | 价值护盘，成长承压" oninput="r()">
+        </div>
+        <div class="g2">
+          <div><label>日期</label><input type="text" id="f-date" oninput="r()"></div>
+          <div><label>标签</label><input type="text" id="f-tag" value="每日简报" oninput="r()"></div>
+        </div>
+        <div class="g2">
+          <div><label>品牌/来源</label><input type="text" id="f-brand" value="盘前研判" oninput="r()"></div>
+          <div><label>免责（可空）</label><input type="text" id="f-disc" value="仅供参考，非投资建议" oninput="r()"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="hr">
+
+    <!-- 重点观察 -->
+    <div>
+      <div class="blk-title">重点观察标的（最多5个）</div>
+      <div id="watch-ed"></div>
+      <button class="add-btn" onclick="addWatch()">＋ 添加标的 / 指数</button>
+    </div>
+
+    <hr class="hr">
+
+    <!-- 核心看点 & 风险 -->
+    <div>
+      <div class="blk-title">核心看点 & 主要风险</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <label>核心看点（每行一条）</label>
+          <textarea id="f-bull" rows="4" oninput="r()">低估值板块估值修复逻辑持续强化
+政策托底预期支撑市场情绪
+大宗商品走强利好资源板块</textarea>
+        </div>
+        <div>
+          <label>主要风险（每行一条）</label>
+          <textarea id="f-bear" rows="4" oninput="r()">美联储鹰派预期压制外资流入
+人民币汇率波动加剧
+科技成长估值仍处历史高位</textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ed-foot">
+    <button class="gen-btn" onclick="dl()">⬇ 生成图片下载</button>
+    <div class="dl-row">
+      <button class="s-btn" onclick="dl()">📥 PNG</button>
+      <button class="s-btn" onclick="copyImg()">📋 复制图片</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREVIEW -->
+<div class="pv">
+  <div class="pv-label">实时预览</div>
+
+  <div id="card">
+    <div class="ch">
+      <div class="ch-eye" id="c-eye"></div>
+      <div class="ch-title" id="c-title">A股日报 | 价值护盘，成长承压</div>
+      <div class="ch-meta">
+        <span class="ch-date" id="c-date"></span>
+        <span class="ch-tag" id="c-tag">每日简报</span>
+      </div>
+    </div>
+
+    <!-- Watchlist -->
+    <div class="cs">
+      <div class="cs-lbl">重点观察</div>
+      <div id="c-wl"></div>
+    </div>
+
+    <!-- Key points + risks -->
+    <div class="cs">
+      <div class="cs-lbl">核心看点 · 主要风险</div>
+      <div class="rk">
+        <div class="rk-box bull">
+          <div class="rk-lbl">▲ 核心看点</div>
+          <ul id="c-bull"></ul>
+        </div>
+        <div class="rk-box bear">
+          <div class="rk-lbl">▼ 主要风险</div>
+          <ul id="c-bear"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="cf">
+      <span class="cf-brand" id="c-brand">盘前研判</span>
+      <span class="cf-disc" id="c-disc">仅供参考，非投资建议</span>
+      <span class="cf-time" id="c-time"></span>
+    </div>
+  </div>
+
+  <div class="pv-btns">
+    <button class="s-btn" onclick="dl()">📥 下载 PNG</button>
+    <button class="s-btn" onclick="copyImg()">📋 复制图片</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let watches = [
+  {sym:'000001.SH', name:'上证指数', price:'3,286', chg:'+1.23%', bull:'站上20日均线，MACD金叉共振', bear:'成交量未有效配合放大'},
+  {sym:'399006.SZ', name:'创业板指',  price:'2,058', chg:'-0.34%', bull:'政策催化预期升温',              bear:'外资持续净流出'},
+  {sym:'HSI',       name:'恒生指数',  price:'18,963',chg:'+2.11%', bull:'南向资金净流入，估值偏低',      bear:'地缘局势存在扰动'},
+];
+
+// init
+setDate(); renderWatchEd(); r();
+
+function setDate(){
+  const d=new Date(), w=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('f-date').value=`${d.getFullYear()}.${p2(d.getMonth()+1)}.${p2(d.getDate())} ${w}`;
+}
+function p2(n){return String(n).padStart(2,'0')}
+
+function renderWatchEd(){
+  const g=document.getElementById('watch-ed'); g.innerHTML='';
+  watches.forEach((w,i)=>{
+    const div=document.createElement('div'); div.className='wi';
+    div.innerHTML=`
+      <div class="wi-top">
+        <input type="text" value="${x(w.sym)}"   placeholder="代码"   style="width:90px"  oninput="watches[${i}].sym=this.value;r()">
+        <input type="text" value="${x(w.name)}"  placeholder="名称"   style="flex:1"      oninput="watches[${i}].name=this.value;r()">
+        <input type="text" value="${x(w.price)}" placeholder="价格"   style="width:72px"  oninput="watches[${i}].price=this.value;r()">
+        <input type="text" value="${x(w.chg)}"   placeholder="±%"    style="width:64px"  oninput="watches[${i}].chg=this.value;r()">
+        <button class="del" onclick="watches.splice(${i},1);renderWatchEd();r()">✕</button>
+      </div>
+      <div class="wi-body">
+        <div><label>核心看点</label><textarea oninput="watches[${i}].bull=this.value;r()">${x(w.bull)}</textarea></div>
+        <div><label>主要风险</label><textarea oninput="watches[${i}].bear=this.value;r()">${x(w.bear)}</textarea></div>
+      </div>
+    `;
+    g.appendChild(div);
+  });
+}
+
+function addWatch(){
+  if(watches.length>=5) return;
+  watches.push({sym:'',name:'',price:'',chg:'',bull:'',bear:''});
+  renderWatchEd(); r();
+}
+
+function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function v(id){return document.getElementById(id).value}
+
+function r(){
+  const title=v('f-title'), date=v('f-date'), tag=v('f-tag'), brand=v('f-brand'), disc=v('f-disc');
+  document.getElementById('c-eye').textContent   = brand.toUpperCase()+' · '+date;
+  document.getElementById('c-title').textContent = title;
+  document.getElementById('c-date').textContent  = date;
+  document.getElementById('c-tag').textContent   = tag;
+  document.getElementById('c-brand').textContent = brand;
+  document.getElementById('c-disc').textContent  = disc;
+  const now=new Date();
+  document.getElementById('c-time').textContent=`${p2(now.getHours())}:${p2(now.getMinutes())} CST`;
+
+  // watchlist
+  const wl=document.getElementById('c-wl'); wl.innerHTML='';
+  watches.forEach(w=>{
+    const up=w.chg.startsWith('+'), dn=w.chg.startsWith('-');
+    const chgBg=up?'rgba(74,222,128,.12)':dn?'rgba(248,113,113,.12)':'rgba(100,116,139,.1)';
+    const chgC =up?'#4ade80':dn?'#f87171':'#94a3b8';
+    const priceC=up?'#e8faf0':dn?'#fef2f2':'#dde6f5';
+    const item=document.createElement('div'); item.className='wl-item';
+    item.innerHTML=`
+      <div class="wl-top">
+        <span class="wl-sym">${w.sym}</span>
+        <span class="wl-name">${w.name}</span>
+        <span class="wl-price" style="color:${priceC}">${w.price}</span>
+        <span class="wl-chg" style="background:${chgBg};color:${chgC}">${w.chg}</span>
+      </div>
+      <div class="wl-cols">
+        <div class="wl-col">
+          <div class="wl-col-lbl" style="color:rgba(74,222,128,.5)">▲ 看点</div>
+          <div class="wl-col-txt" style="color:#6aab80">${w.bull||'—'}</div>
+        </div>
+        <div class="wl-col">
+          <div class="wl-col-lbl" style="color:rgba(248,113,113,.5)">▼ 风险</div>
+          <div class="wl-col-txt" style="color:#ab6a6a">${w.bear||'—'}</div>
+        </div>
+      </div>
+    `;
+    wl.appendChild(item);
+  });
+
+  // bull / bear
+  const bullLines=v('f-bull').split('\n').filter(s=>s.trim());
+  const bearLines=v('f-bear').split('\n').filter(s=>s.trim());
+  document.getElementById('c-bull').innerHTML=bullLines.map(l=>`<li>${l}</li>`).join('');
+  document.getElementById('c-bear').innerHTML=bearLines.map(l=>`<li>${l}</li>`).join('');
+}
+
+async function dl(){
+  try{
+    const c=await html2canvas(document.getElementById('card'),{scale:3,backgroundColor:null,useCORS:true,logging:false});
+    const a=document.createElement('a'); a.download=`briefing-${Date.now()}.png`; a.href=c.toDataURL('image/png'); a.click();
+    toast('✓ 已保存');
+  }catch(e){alert('生成失败: '+e.message)}
+}
+async function copyImg(){
+  try{
+    const c=await html2canvas(document.getElementById('card'),{scale:3,backgroundColor:null,useCORS:true,logging:false});
+    c.toBlob(async b=>{
+      try{await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);toast('✓ 已复制');}
+      catch{toast('请直接下载');}
+    });
+  }catch(e){alert('生成失败: '+e.message)}
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+</script>
+</body>
+</html>
