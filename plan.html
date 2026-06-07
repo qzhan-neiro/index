@@ -1,95 +1,65 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --accent:#7F77DD;--accent-dark:#534AB7;
-  --teal:#1D9E75;--teal-light:#E1F5EE;--teal-dark:#085041;
-  --coral-light:#FAECE7;--coral-dark:#712B13;
-  --amber-light:#FAEEDA;--amber-dark:#633806;
-  --purple-light:#EEEDFE;--purple-dark:#3C3489;
-  --blue-light:#E6F1FB;--blue-dark:#0C447C;
-}
-.planner{padding:1.25rem 0 2rem}
-
-.hero{border-radius:16px;background:var(--color-background-secondary);padding:20px 24px;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:16px;border:0.5px solid var(--color-border-tertiary)}
-.hero-left{}
-.hero-greeting{font-size:13px;color:var(--color-text-secondary);margin-bottom:2px}
-.hero-date{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.planner{padding:1.25rem 0 2rem;font-family:var(--font-sans)}
+.hero{border-radius:14px;background:var(--color-background-secondary);padding:18px 22px;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border:0.5px solid var(--color-border-tertiary)}
+.hero-greeting{font-size:12px;color:var(--color-text-secondary);margin-bottom:2px}
+.hero-date{font-size:18px;font-weight:500;color:var(--color-text-primary)}
 .hero-sub{font-size:12px;color:var(--color-text-secondary);margin-top:3px}
-.kpi-row{display:flex;gap:10px}
-.kpi{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px 16px;text-align:center;min-width:68px}
-.kpi-n{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.kpi-row{display:flex;gap:8px;flex-wrap:wrap}
+.kpi{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:8px 14px;text-align:center;min-width:60px}
+.kpi-n{font-size:20px;font-weight:500;color:var(--color-text-primary)}
 .kpi-l{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
 .kpi.k-done .kpi-n{color:#0F6E56}
 .kpi.k-pct .kpi-n{color:#534AB7}
-
 .prog-wrap{height:3px;background:var(--color-background-secondary);border-radius:2px;margin-bottom:1.25rem}
-.prog-fill{height:100%;border-radius:2px;background:#7F77DD;transition:width .5s cubic-bezier(.4,0,.2,1)}
-
-.add-row{display:flex;gap:8px;margin-bottom:1.5rem}
-.add-row input{flex:1;height:38px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px;padding:0 14px;outline:none;transition:border-color .15s}
+.prog-fill{height:100%;border-radius:2px;background:#7F77DD;transition:width .5s}
+.add-row{display:flex;gap:8px;margin-bottom:1.25rem}
+.add-row input{flex:1;height:38px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px;padding:0 14px;outline:none}
 .add-row input:focus{border-color:#7F77DD;box-shadow:0 0 0 3px rgba(127,119,221,.12)}
 .add-row select{height:38px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px;padding:0 10px;outline:none;cursor:pointer}
-.add-row button{height:38px;padding:0 16px;border-radius:10px;border:none;background:#7F77DD;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:var(--font-sans);transition:background .15s}
-.add-row button:hover{background:#534AB7}
-
-.columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.col-panel{background:var(--color-background-secondary);border-radius:14px;border:0.5px solid var(--color-border-tertiary);padding:14px}
+.add-btn{height:38px;padding:0 16px;border-radius:10px;border:none;background:#7F77DD;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--font-sans)}
+.add-btn:hover{background:#534AB7}
+.columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.col-panel{background:var(--color-background-secondary);border-radius:14px;border:0.5px solid var(--color-border-tertiary);padding:12px}
 .col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .col-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:6px}
-.col-title i{font-size:15px}
-.col-cnt{font-size:11px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:20px;padding:1px 9px;color:var(--color-text-secondary)}
-.task-list{display:flex;flex-direction:column;gap:6px;min-height:40px}
-
-.task{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;transition:border-color .15s}
-.task:hover{border-color:var(--color-border-secondary)}
-.task.done{opacity:.55}
+.col-cnt{font-size:11px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:20px;padding:1px 8px;color:var(--color-text-secondary)}
+.task-list{display:flex;flex-direction:column;gap:6px;min-height:36px}
+.task{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:10px;padding:9px 10px;display:flex;align-items:flex-start;gap:8px}
+.task.done{opacity:.5}
 .task.done .t-text{text-decoration:line-through;color:var(--color-text-secondary)}
-
-.chk{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:transparent;transition:all .15s;margin-top:1px}
-.chk:hover{border-color:#1D9E75;color:#1D9E75}
-.task.done .chk{background:#1D9E75;border-color:#1D9E75;color:#fff}
-.chk i{font-size:12px}
-
+.chk{width:20px;height:20px;border-radius:50%;border:1.5px solid #bbb;background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:1px;padding:0}
+.task.done .chk{background:#1D9E75;border-color:#1D9E75}
 .t-body{flex:1;min-width:0}
-.t-text{font-size:13px;color:var(--color-text-primary);line-height:1.4;word-break:break-word}
+.t-text{font-size:13px;color:var(--color-text-primary);line-height:1.45;word-break:break-word}
 .t-meta{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
-.tag{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.tag{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:500}
 .tag-work{background:#EEEDFE;color:#3C3489}
 .tag-meeting{background:#E6F1FB;color:#0C447C}
 .tag-personal{background:#E1F5EE;color:#085041}
 .tag-urgent{background:#FAECE7;color:#712B13}
 .t-time{font-size:11px;color:var(--color-text-secondary)}
-
-.t-acts{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0}
-.task:hover .t-acts{opacity:1}
-.a-btn{width:26px;height:26px;border-radius:7px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);transition:background .15s,color .15s}
-.a-btn:hover{background:var(--color-background-secondary)}
-.a-btn.del:hover{background:#FCEBEB;color:#791F1F}
-.a-btn i{font-size:14px}
-
-.empty-state{padding:24px 0;text-align:center;color:var(--color-text-secondary);font-size:13px}
-.empty-state i{font-size:28px;display:block;margin-bottom:6px;color:var(--color-text-secondary)}
-
+.t-acts{display:flex;gap:4px;flex-shrink:0;margin-top:1px}
+.a-btn{width:26px;height:26px;border-radius:7px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.a-btn.del{border-color:#F7C1C1;background:#FCEBEB}
+.empty-state{padding:20px 0;text-align:center;color:var(--color-text-secondary);font-size:13px}
 .bottom-bar{display:flex;align-items:center;justify-content:space-between;margin-top:1.25rem;padding-top:1rem;border-top:0.5px solid var(--color-border-tertiary);flex-wrap:wrap;gap:10px}
-.reset-hint{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:5px}
-.reset-hint i{font-size:14px}
-.btn-row{display:flex;gap:8px}
-.ftr-btn{height:34px;padding:0 14px;border-radius:9px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:var(--font-sans);transition:background .15s}
-.ftr-btn:hover{background:var(--color-background-secondary)}
+.reset-hint{font-size:12px;color:var(--color-text-secondary)}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap}
+.ftr-btn{height:32px;padding:0 12px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:var(--font-sans)}
 .ftr-btn.exp{background:#7F77DD;color:#fff;border-color:#7F77DD}
 .ftr-btn.exp:hover{background:#534AB7;border-color:#534AB7}
-
+.ftr-btn.rst{background:#FAECE7;color:#712B13;border-color:#F5C4B3}
+.ftr-btn.rst:hover{background:#F5C4B3}
 .edit-inp{width:100%;height:24px;border-radius:5px;border:0.5px solid #7F77DD;background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px;padding:0 6px;outline:none;font-family:var(--font-sans)}
-
-.default-badge{font-size:10px;background:#EEEDFE;color:#534AB7;border-radius:20px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+.def-badge{font-size:10px;background:#EEEDFE;color:#534AB7;border-radius:20px;padding:1px 6px;margin-left:4px;vertical-align:middle}
 </style>
 
 <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">每日工作计划看板</h2>
-
 <div class="planner">
   <div class="hero">
-    <div class="hero-left">
+    <div>
       <div class="hero-greeting">早上好，准备好今天的工作了吗</div>
       <div class="hero-date" id="hero-date"></div>
       <div class="hero-sub" id="hero-sub"></div>
@@ -101,9 +71,7 @@
       <div class="kpi k-pct"><div class="kpi-n" id="k-pct">0%</div><div class="kpi-l">进度</div></div>
     </div>
   </div>
-
   <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
-
   <div class="add-row">
     <input id="inp" type="text" placeholder="添加新任务，按回车快速创建…" />
     <select id="tag-sel">
@@ -112,40 +80,53 @@
       <option value="personal">个人</option>
       <option value="urgent">紧急</option>
     </select>
-    <button onclick="addTask()"><i class="ti ti-plus" aria-hidden="true"></i> 添加</button>
+    <button class="add-btn" onclick="addTask()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+      添加
+    </button>
   </div>
-
   <div class="columns">
     <div class="col-panel">
       <div class="col-head">
-        <div class="col-title"><i class="ti ti-circle-dashed" aria-hidden="true" style="color:#888"></i> 待完成</div>
+        <div class="col-title">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" stroke="#aaa" stroke-width="1.2" stroke-dasharray="3 2"/></svg>
+          待完成
+        </div>
         <span class="col-cnt" id="cnt-todo">0</span>
       </div>
       <div class="task-list" id="list-todo"></div>
     </div>
     <div class="col-panel">
       <div class="col-head">
-        <div class="col-title"><i class="ti ti-circle-check" aria-hidden="true" style="color:#1D9E75"></i> 已完成</div>
+        <div class="col-title">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" stroke="#1D9E75" stroke-width="1.2"/><path d="M4.5 7.5l2 2 4-4" stroke="#1D9E75" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          已完成
+        </div>
         <span class="col-cnt" id="cnt-done">0</span>
       </div>
       <div class="task-list" id="list-done"></div>
     </div>
   </div>
-
   <div class="bottom-bar">
-    <div class="reset-hint"><i class="ti ti-refresh" aria-hidden="true"></i><span id="reset-txt"></span></div>
+    <div class="reset-hint" id="reset-txt"></div>
     <div class="btn-row">
-      <button class="ftr-btn" onclick="clearDone()"><i class="ti ti-eraser" aria-hidden="true"></i> 清除已完成</button>
-      <button class="ftr-btn" onclick="clearAll()"><i class="ti ti-trash" aria-hidden="true"></i> 清空全部</button>
-      <button class="ftr-btn exp" onclick="exportPlan()"><i class="ti ti-download" aria-hidden="true"></i> 导出日报</button>
+      <button class="ftr-btn rst" onclick="resetToDefaults()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5a4.5 4.5 0 104.5-4.5c-1.5 0-2.8.7-3.7 1.8" stroke="#993C1D" stroke-width="1.3" stroke-linecap="round"/><path d="M2 2.5v2.3h2.3" stroke="#993C1D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        重置为默认
+      </button>
+      <button class="ftr-btn" onclick="clearDone()">清除已完成</button>
+      <button class="ftr-btn" onclick="clearAll()">清空全部</button>
+      <button class="ftr-btn exp" onclick="exportPlan()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M3.5 5.5l3 3 3-3M1 10h11" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        导出日报
+      </button>
     </div>
   </div>
 </div>
 
 <script>
-const KEY = 'dplanner_v3';
-const tagLabel = {work:'工作',meeting:'会议',personal:'个人',urgent:'紧急'};
-
+const KEY='dplanner_v5';
+const tagLabel={work:'工作',meeting:'会议',personal:'个人',urgent:'紧急'};
 const DEFAULTS = [
   {text:'- 9.30 前查看外围涨跌、美股板块走势，梳理当日市场情绪、主线方向', tag:'work'},
   {text:'- 9.30 前方向- 筛选3-5个重点观察标的/指数，梳理核心看点与风险点', tag:'work'},
@@ -155,67 +136,44 @@ const DEFAULTS = [
   {text:'4:00- 6:00 qq 群 推特引流', tag:'work'},
   {text:'6:00 -6:10 下班前总结今日完成情况', tag:'personal'},
 ];
+let tasks=[];
 
-let tasks = [];
-
-function todayStr(){
-  const d=new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function todayLabel(){
-  const d=new Date();
-  const weeks=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
-  return `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日`;
-}
-function todayWeek(){
-  const d=new Date();
-  return ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][d.getDay()];
-}
-function timeNow(){
-  const d=new Date();
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
+function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function timeNow(){const d=new Date();return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
 
 function load(){
   try{
     const raw=localStorage.getItem(KEY);
-    if(!raw){initDefaults();return;}
+    if(!raw){init();return;}
     const data=JSON.parse(raw);
-    if(data.date!==todayStr()){initDefaults();return;}
+    if(data.date!==todayStr()){init();return;}
     tasks=data.tasks||[];
-  }catch(e){initDefaults();}
+  }catch(e){init();}
 }
-function initDefaults(){
-  tasks=DEFAULTS.map((d,i)=>({id:Date.now()+i,text:d.text,tag:d.tag,time:'--:--',done:false,isDefault:true}));
+function init(){
+  tasks=DEFAULTS.map((d,i)=>({id:Date.now()+i,text:d.text,tag:d.tag,time:'',done:false,isDef:true}));
   save();
 }
-function save(){
-  localStorage.setItem(KEY,JSON.stringify({date:todayStr(),tasks}));
+function save(){localStorage.setItem(KEY,JSON.stringify({date:todayStr(),tasks}));}
+
+function resetToDefaults(){
+  if(!confirm('重置后将清除所有当前任务，恢复为默认任务列表，确定吗？'))return;
+  init();render();
 }
 
 function addTask(){
   const inp=document.getElementById('inp');
   const text=inp.value.trim();
   if(!text)return;
-  const tag=document.getElementById('tag-sel').value;
-  tasks.push({id:Date.now(),text,tag,time:timeNow(),done:false,isDefault:false});
-  inp.value='';
-  save();render();
+  tasks.push({id:Date.now(),text,tag:document.getElementById('tag-sel').value,time:timeNow(),done:false,isDef:false});
+  inp.value='';save();render();
 }
 document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});
 
-function toggle(id){
-  const t=tasks.find(x=>x.id===id);
-  if(t)t.done=!t.done;
-  save();render();
-}
-function del(id){
-  tasks=tasks.filter(x=>x.id!==id);
-  save();render();
-}
+function toggle(id){const t=tasks.find(x=>x.id===id);if(t)t.done=!t.done;save();render();}
+function del(id){if(!confirm('删除这条任务？'))return;tasks=tasks.filter(x=>x.id!==id);save();render();}
 function startEdit(id){
-  const t=tasks.find(x=>x.id===id);
-  if(!t)return;
+  const t=tasks.find(x=>x.id===id);if(!t)return;
   const body=document.querySelector(`[data-id="${id}"] .t-body`);
   body.innerHTML=`<input class="edit-inp" value="${t.text.replace(/"/g,'&quot;')}" onblur="endEdit(${id},this)" onkeydown="if(event.key==='Enter')this.blur()"/>`;
   body.querySelector('input').focus();
@@ -223,35 +181,32 @@ function startEdit(id){
 function endEdit(id,inp){
   const t=tasks.find(x=>x.id===id);
   const v=inp.value.trim();
-  if(t&&v){t.text=v;t.isDefault=false;}
+  if(t&&v){t.text=v;t.isDef=false;}
   save();render();
 }
-function clearDone(){
-  tasks=tasks.filter(x=>!x.done);
-  save();render();
-}
-function clearAll(){
-  if(!tasks.length)return;
-  if(!confirm('确定清空所有任务？')) return;
-  tasks=[];save();render();
-}
-
+function clearDone(){tasks=tasks.filter(x=>!x.done);save();render();}
+function clearAll(){if(!tasks.length)return;if(!confirm('确定清空所有任务？'))return;tasks=[];save();render();}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+const svgCheck=`<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const svgEdit=`<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M8.5 2.5l2 2-6 6H2.5v-2l6-6z" stroke="#555" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const svgDel=`<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 3.5h9M5 3.5V2.5h3v1M5.5 6v4M7.5 6v4M3 3.5l.7 7h5.6l.7-7" stroke="#A32D2D" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 function taskHtml(t){
-  const defBadge = t.isDefault ? `<span class="default-badge">默认</span>` : '';
   return `<div class="task${t.done?' done':''}" data-id="${t.id}">
-    <button class="chk" onclick="toggle(${t.id})" aria-label="${t.done?'取消完成':'标记完成'}"><i class="ti ti-check"></i></button>
+    <button class="chk" onclick="toggle(${t.id})" aria-label="${t.done?'取消完成':'标记完成'}" style="border-color:${t.done?'#1D9E75':'#bbb'}">
+      ${t.done?svgCheck:''}
+    </button>
     <div class="t-body">
-      <div class="t-text">${esc(t.text)}${defBadge}</div>
+      <div class="t-text">${esc(t.text)}${t.isDef?'<span class="def-badge">默认</span>':''}</div>
       <div class="t-meta">
         <span class="tag tag-${t.tag}">${tagLabel[t.tag]}</span>
-        ${t.time!=='--:--'?`<span class="t-time">${t.time} 添加</span>`:''}
+        ${t.time?`<span class="t-time">${t.time} 添加</span>`:''}
       </div>
     </div>
     <div class="t-acts">
-      <button class="a-btn" onclick="startEdit(${t.id})" aria-label="编辑"><i class="ti ti-edit"></i></button>
-      <button class="a-btn del" onclick="del(${t.id})" aria-label="删除"><i class="ti ti-trash"></i></button>
+      <button class="a-btn" onclick="startEdit(${t.id})" aria-label="编辑" title="编辑">${svgEdit}</button>
+      <button class="a-btn del" onclick="del(${t.id})" aria-label="删除" title="删除">${svgDel}</button>
     </div>
   </div>`;
 }
@@ -261,7 +216,6 @@ function render(){
   const done=tasks.filter(x=>x.done);
   const total=tasks.length;
   const pct=total?Math.round(done.length/total*100):0;
-
   document.getElementById('k-total').textContent=total;
   document.getElementById('k-done').textContent=done.length;
   document.getElementById('k-left').textContent=todo.length;
@@ -269,21 +223,13 @@ function render(){
   document.getElementById('prog').style.width=pct+'%';
   document.getElementById('cnt-todo').textContent=todo.length;
   document.getElementById('cnt-done').textContent=done.length;
-
   const now=new Date();
-  const next=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
-  const h=Math.round((next-now)/3600000);
+  const h=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)-now)/3600000);
   document.getElementById('reset-txt').textContent=`计划将在 ${h} 小时后自动重置`;
-
-  const sub = pct===0?'今天刚刚开始，加油！':pct<50?`已完成 ${done.length} 项，继续努力`:pct<100?`进展顺利，还差 ${todo.length} 项`:'全部完成，完美收官！';
+  const sub=pct===0?'今天刚刚开始，加油！':pct<50?`已完成 ${done.length} 项，继续努力`:pct<100?`还差 ${todo.length} 项，快了`:'全部完成，完美收官！';
   document.getElementById('hero-sub').textContent=sub;
-
-  document.getElementById('list-todo').innerHTML = todo.length
-    ? todo.map(taskHtml).join('')
-    : `<div class="empty-state"><i class="ti ti-confetti" aria-hidden="true"></i>所有任务已完成</div>`;
-  document.getElementById('list-done').innerHTML = done.length
-    ? done.map(taskHtml).join('')
-    : `<div class="empty-state"><i class="ti ti-clock" aria-hidden="true"></i>完成任务后显示在这里</div>`;
+  document.getElementById('list-todo').innerHTML=todo.length?todo.map(taskHtml).join(''):`<div class="empty-state">所有任务已完成 ✓</div>`;
+  document.getElementById('list-done').innerHTML=done.length?done.map(taskHtml).join(''):`<div class="empty-state">完成任务后显示在这里</div>`;
 }
 
 function exportPlan(){
@@ -292,68 +238,15 @@ function exportPlan(){
   const todo=tasks.filter(x=>!x.done);
   const done=tasks.filter(x=>x.done);
   const pct=tasks.length?Math.round(done.length/tasks.length*100):0;
-  const rowHtml=(t,isDone)=>`<tr>
-    <td style="padding:10px 14px;border-bottom:1px solid #f2f2f2;vertical-align:middle">
-      <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;${isDone?'background:#1D9E75;':'border:1.5px solid #ccc;'}margin-right:8px;vertical-align:middle;flex-shrink:0">
-        ${isDone?'<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5l2 2 4-4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>':''}
-      </span>${t.text}
-    </td>
-    <td style="padding:10px 14px;border-bottom:1px solid #f2f2f2;text-align:center">
-      <span style="font-size:11px;padding:2px 8px;border-radius:20px;${
-        t.tag==='work'?'background:#EEEDFE;color:#3C3489':
-        t.tag==='meeting'?'background:#E6F1FB;color:#0C447C':
-        t.tag==='personal'?'background:#E1F5EE;color:#085041':
-        'background:#FAECE7;color:#712B13'}">${tagLabel[t.tag]}</span>
-    </td>
-    <td style="padding:10px 14px;border-bottom:1px solid #f2f2f2;color:#aaa;font-size:12px;text-align:right">${t.time}</td>
-  </tr>`;
-
-  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>工作日报 ${ds}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;padding:48px 24px}
-.wrap{max-width:700px;margin:0 auto}
-.page-head{margin-bottom:32px}
-.page-head h1{font-size:28px;font-weight:500;margin-bottom:4px}
-.page-head p{font-size:14px;color:#888}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
-.kpi{background:#fff;border-radius:12px;border:1px solid #eee;padding:16px;text-align:center}
-.kpi-n{font-size:26px;font-weight:500}
-.kpi-l{font-size:12px;color:#aaa;margin-top:2px}
-.kpi.g .kpi-n{color:#0F6E56}.kpi.p .kpi-n{color:#534AB7}
-.bar-wrap{background:#eee;height:6px;border-radius:3px;margin-bottom:32px}
-.bar-fill{height:100%;border-radius:3px;background:#7F77DD}
-.section{margin-bottom:28px}
-.section h2{font-size:14px;font-weight:500;color:#555;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eee}
-th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#999;background:#fafafa;border-bottom:1px solid #f2f2f2}
-.footer{margin-top:40px;font-size:12px;color:#ccc;text-align:center;padding-top:16px;border-top:1px solid #eee}
-</style></head><body><div class="wrap">
-<div class="page-head"><h1>工作日报</h1><p>${ds} &nbsp;·&nbsp; 共 ${tasks.length} 项任务</p></div>
-<div class="kpis">
-  <div class="kpi"><div class="kpi-n">${tasks.length}</div><div class="kpi-l">全部</div></div>
-  <div class="kpi g"><div class="kpi-n">${done.length}</div><div class="kpi-l">完成</div></div>
-  <div class="kpi"><div class="kpi-n">${todo.length}</div><div class="kpi-l">未完成</div></div>
-  <div class="kpi p"><div class="kpi-n">${pct}%</div><div class="kpi-l">完成率</div></div>
-</div>
-<div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
-${done.length?`<div class="section"><h2>已完成（${done.length} 项）</h2>
-<table><thead><tr><th>任务</th><th style="text-align:center">标签</th><th style="text-align:right">时间</th></tr></thead>
-<tbody>${done.map(t=>rowHtml(t,true)).join('')}</tbody></table></div>`:''}
-${todo.length?`<div class="section"><h2>未完成（${todo.length} 项）</h2>
-<table><thead><tr><th>任务</th><th style="text-align:center">标签</th><th style="text-align:right">时间</th></tr></thead>
-<tbody>${todo.map(t=>rowHtml(t,false)).join('')}</tbody></table></div>`:''}
-<div class="footer">每日工作计划导出 · ${ds}</div>
-</div></body></html>`;
-
-  const blob=new Blob([html],{type:'text/html'});
+  const row=(t,isDone)=>`<tr><td style="padding:10px 14px;border-bottom:1px solid #f2f2f2">${isDone?'✅':'⬜'} ${t.text}</td><td style="padding:10px 14px;border-bottom:1px solid #f2f2f2;text-align:center"><span style="font-size:11px;padding:2px 8px;border-radius:20px;${t.tag==='work'?'background:#EEEDFE;color:#3C3489':t.tag==='meeting'?'background:#E6F1FB;color:#0C447C':t.tag==='personal'?'background:#E1F5EE;color:#085041':'background:#FAECE7;color:#712B13'}">${tagLabel[t.tag]}</span></td><td style="padding:10px 14px;border-bottom:1px solid #f2f2f2;color:#aaa;font-size:12px;text-align:right">${t.time||'--'}</td></tr>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>工作日报 ${ds}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;padding:48px 24px}.wrap{max-width:700px;margin:0 auto}h1{font-size:26px;font-weight:500;margin-bottom:4px}.sub{font-size:14px;color:#888;margin-bottom:28px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}.kpi{background:#fff;border-radius:12px;border:1px solid #eee;padding:14px;text-align:center}.kpi-n{font-size:24px;font-weight:500}.kpi-l{font-size:12px;color:#aaa;margin-top:2px}.kpi.g .kpi-n{color:#0F6E56}.kpi.p .kpi-n{color:#534AB7}.bar-wrap{background:#eee;height:5px;border-radius:3px;margin-bottom:28px}.bar-fill{height:100%;border-radius:3px;background:#7F77DD}.sec{margin-bottom:24px}.sec h2{font-size:13px;font-weight:500;color:#666;margin-bottom:10px}table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eee}th{padding:10px 14px;text-align:left;font-size:12px;color:#999;background:#fafafa;border-bottom:1px solid #f2f2f2}.footer{margin-top:36px;font-size:12px;color:#ccc;text-align:center;padding-top:14px;border-top:1px solid #eee}</style></head><body><div class="wrap"><h1>工作日报</h1><p class="sub">${ds} · 共 ${tasks.length} 项任务</p><div class="kpis"><div class="kpi"><div class="kpi-n">${tasks.length}</div><div class="kpi-l">全部</div></div><div class="kpi g"><div class="kpi-n">${done.length}</div><div class="kpi-l">完成</div></div><div class="kpi"><div class="kpi-n">${todo.length}</div><div class="kpi-l">未完成</div></div><div class="kpi p"><div class="kpi-n">${pct}%</div><div class="kpi-l">完成率</div></div></div><div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>${done.length?`<div class="sec"><h2>已完成（${done.length} 项）</h2><table><thead><tr><th>任务</th><th style="text-align:center">标签</th><th style="text-align:right">时间</th></tr></thead><tbody>${done.map(t=>row(t,true)).join('')}</tbody></table></div>`:''}${todo.length?`<div class="sec"><h2>未完成（${todo.length} 项）</h2><table><thead><tr><th>任务</th><th style="text-align:center">标签</th><th style="text-align:right">时间</th></tr></thead><tbody>${todo.map(t=>row(t,false)).join('')}</tbody></table></div>`:''}<div class="footer">每日工作计划导出 · ${ds}</div></div></body></html>`;
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`工作日报_${ds}.html`;
-  a.click();
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download=`工作日报_${ds}.html`;a.click();
 }
 
-document.getElementById('hero-date').textContent=todayLabel()+'  '+todayWeek();
-load();
-render();
+const d=new Date();
+const weeks=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+document.getElementById('hero-date').textContent=`${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日  ${weeks[d.getDay()]}`;
+load();render();
 </script>
