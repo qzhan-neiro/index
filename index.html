@@ -1,544 +1,223 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>中美行业指数导航</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0a0f;
-    --bg2: #111118;
-    --bg3: #1a1a24;
-    --border: rgba(255,255,255,0.07);
-    --border-hover: rgba(255,255,255,0.18);
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --accent-cn: #ff4d6d;
-    --accent-us: #3d9aff;
-    --accent-compare: #00e5a0;
-    --accent-stocks: #f5a623;
-    --mono: 'JetBrains Mono', monospace;
-    --sans: 'Noto Sans SC', sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    padding: 0;
-  }
-
-  /* grid bg */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
-
-  header { margin-bottom: 48px; }
-  .header-top { display: flex; align-items: baseline; gap: 16px; margin-bottom: 8px; }
-  h1 {
-    font-family: var(--mono);
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    color: #fff;
-  }
-  .version {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    padding: 2px 8px;
-    border-radius: 3px;
-  }
-  .subtitle { font-size: 13px; color: var(--muted); font-weight: 300; }
-
-  /* tabs */
-  .tabs { display: flex; gap: 0; margin-bottom: 32px; border-bottom: 1px solid var(--border); }
-  .tab {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 500;
-    padding: 10px 20px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    color: var(--muted);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    transition: color 0.2s, border-color 0.2s;
-    display: flex; align-items: center; gap: 8px;
-    letter-spacing: 0.3px;
-  }
-  .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
-  .tab.cn { --c: var(--accent-cn); }
-  .tab.us { --c: var(--accent-us); }
-  .tab.compare { --c: var(--accent-compare); }
-  .tab.stocks { --c: var(--accent-stocks); }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--c); border-bottom-color: var(--c); }
-  .tab.active .dot { opacity: 1; }
-
-  /* search */
-  .search-bar {
-    display: flex; align-items: center; gap: 12px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 14px;
-    margin-bottom: 20px;
-    transition: border-color 0.2s;
-  }
-  .search-bar:focus-within { border-color: var(--border-hover); }
-  .search-bar svg { flex-shrink: 0; opacity: 0.3; }
-  .search-bar input {
-    background: none; border: none; outline: none;
-    color: var(--text); font-family: var(--mono); font-size: 13px;
-    flex: 1;
-  }
-  .search-bar input::placeholder { color: var(--muted); }
-  .count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-
-  /* panel */
-  .panel { display: none; }
-  .panel.active { display: block; animation: fadeIn 0.2s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* grid */
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-
-  /* card */
-  .card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, transform 0.15s;
-    position: relative;
-    overflow: hidden;
-    text-decoration: none;
-    display: block;
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--accent);
-    opacity: 0.6;
-    transition: opacity 0.15s;
-  }
-  .card:hover { border-color: var(--border-hover); background: var(--bg3); transform: translateY(-1px); }
-  .card:hover::before { opacity: 1; }
-  .card.cn { --accent: var(--accent-cn); }
-  .card.us { --accent: var(--accent-us); }
-  .card.compare { --accent: var(--accent-compare); }
-  .card.stocks { --accent: var(--accent-stocks); }
-
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .card-code {
-    font-family: var(--mono);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0.5px;
-  }
-  .card-tag {
-    font-family: var(--mono);
-    font-size: 10px;
-    padding: 2px 7px;
-    border-radius: 3px;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    opacity: 0.7;
-    letter-spacing: 0.3px;
-  }
-  .card-name { font-size: 14px; font-weight: 500; color: #fff; margin-bottom: 5px; line-height: 1.4; }
-  .card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
-  .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
-  .card-issuer { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-  .tv-link {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--accent);
-    display: flex; align-items: center; gap: 4px;
-    opacity: 0.6;
-    transition: opacity 0.15s;
-    text-decoration: none;
-  }
-  .card:hover .tv-link { opacity: 1; }
-  .tv-link svg { width: 10px; height: 10px; }
-
-  /* compare table */
-  .compare-grid { display: grid; gap: 10px; }
-  .compare-row {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 20px;
-    display: grid;
-    grid-template-columns: 120px 1fr 1fr;
-    gap: 16px;
-    align-items: center;
-    transition: border-color 0.15s;
-  }
-  .compare-row:hover { border-color: var(--border-hover); }
-  .compare-sector { font-size: 13px; font-weight: 500; color: var(--text); }
-  .compare-item { display: flex; flex-direction: column; gap: 3px; }
-  .compare-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
-  .compare-code-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .ccode {
-    font-family: var(--mono);
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 3px;
-    text-decoration: none;
-    transition: opacity 0.15s;
-  }
-  .ccode:hover { opacity: 0.75; }
-  .ccode.cn { background: rgba(255,77,109,0.12); color: var(--accent-cn); }
-  .ccode.us { background: rgba(61,154,255,0.12); color: var(--accent-us); }
-
-  /* hidden */
-  .hidden { display: none !important; }
-
-  /* stock section label */
-  .stocks-section-label {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.8px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    padding-left: 2px;
-  }
-
-  /* stock card extras */
-  .card-meta { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-  .card-sector {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .star-rating { color: var(--accent-stocks); font-size: 11px; letter-spacing: 1px; }
-
-  /* empty state */
-  .empty { text-align: center; padding: 60px 20px; color: var(--muted); font-family: var(--mono); font-size: 13px; }
-
-  @media (max-width: 600px) {
-    .grid { grid-template-columns: 1fr; }
-    .compare-row { grid-template-columns: 1fr; }
-    .tab { padding: 10px 12px; font-size: 11px; }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的书签导航</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
+        :root {
+            --primary: #6366f1;
+            --bg: #f8fafc;
+            --card: #ffffff;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #1e2937;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+        
+        .search-box {
+            max-width: 500px;
+            margin: 30px auto;
+            position: relative;
+        }
+        
+        input {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            border: none;
+            border-radius: 9999px;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .bookmark-card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .bookmark-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(99 102 241 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            border-color: var(--primary);
+        }
+        
+        .bookmark-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+            color: #1e2937;
+        }
+        
+        .bookmark-url {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            word-break: break-all;
+            flex-grow: 1;
+        }
+        
+        .visit-btn {
+            margin-top: auto;
+            background: linear-gradient(to right, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .visit-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgb(99 102 241 / 0.3);
+        }
+        
+        .add-form {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05);
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div class="header-top">
-      <h1>SECTOR INDEX NAV</h1>
-      <span class="version">v1.0</span>
-    </div>
-    <p class="subtitle">中美行业指数 · 点击跳转 TradingView</p>
-  </header>
+    <div class="container">
+        <header>
+            <h1>📚 我的书签导航</h1>
+            <p style="color: #64748b; margin-top: 8px;">快速访问常用网站</p>
+        </header>
 
-  <div class="tabs">
-    <button class="tab cn active" onclick="switchTab('cn')"><span class="dot"></span>🇨🇳 中国 A股</button>
-    <button class="tab us" onclick="switchTab('us')"><span class="dot"></span>🇺🇸 美国</button>
-    <button class="tab stocks" onclick="switchTab('stocks')"><span class="dot"></span>⭐ 优质个股</button>
-    <!-- <button class="tab compare" onclick="switchTab('compare')"><span class="dot"></span>中美对照</button> -->
-  </div>
-
-  <div id="cn" class="panel active">
-    <div class="search-bar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" placeholder="搜索代码、名称..." oninput="filterCards('cn-grid', this.value)" id="cn-search">
-      <span class="count" id="cn-count"></span>
-    </div>
-    <div class="grid" id="cn-grid"></div>
-    <div class="empty hidden" id="cn-empty">无匹配结果</div>
-  </div>
-
-  <div id="us" class="panel">
-    <div class="search-bar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" placeholder="搜索代码、名称..." oninput="filterCards('us-grid', this.value)" id="us-search">
-      <span class="count" id="us-count"></span>
-    </div>
-    <div class="grid" id="us-grid"></div>
-    <div class="empty hidden" id="us-empty">无匹配结果</div>
-  </div>
-
-  <div id="compare" class="panel">
-    <div class="compare-grid" id="compare-grid"></div>
-  </div>
-
-  <div id="stocks" class="panel">
-    <div class="stocks-section-label">🇨🇳 A股精选</div>
-    <div class="grid" id="stocks-cn-grid"></div>
-    <div class="stocks-section-label" style="margin-top:28px;">🇺🇸 美股精选</div>
-    <div class="grid" id="stocks-us-grid"></div>
-  </div>
-</div>
-
-<script>
-const DATA = {
-  cn: [
-    { code: "000001", name: "上证指数", desc: "上证指数", tag: "宽基", issuer: "中证/上交所", tv: "SSE:000001" },
-    { code: "000300", name: "沪深300", desc: "全市场大盘蓝筹500强精选", tag: "宽基", issuer: "中证/上交所", tv: "SSE:000300" },
-    { code: "000905", name: "中证500", desc: "中盘股代表性指数", tag: "宽基", issuer: "中证", tv: "SSE:000905" },
-    { code: "000510", name: "中证A500", desc: "中证A500", tag: "宽基", issuer: "中证", tv: "SSE:000510" },
-    { code: "399006", name: "创业板指", desc: "深圳创业板成长型/科技股", tag: "宽基", issuer: "深交所", tv: "SZSE:399006" },
-    { code: "000688", name: "科创50", desc: "科创板龙头50只标的", tag: "科技", issuer: "上交所", tv: "SSE:000688" },
-    { code: "931719", name: "CS电池", desc: "动力/储能/消费电池全产业链", tag: "新能源", issuer: "中证", tv: "SSE:931719" },
-    { code: "399976", name: "CS新能车", desc: "新能源汽车整车及零部件产业链", tag: "新能源", issuer: "中证", tv: "SSE:399976" },
-    { code: "931743", name: "中证半导体", desc: "芯片设计/制造/封测产业链", tag: "科技", issuer: "中证", tv: "SSE:931743" },
-    { code: "931071", name: "中证人工智能", desc: "AI/机器学习/算力/大模型", tag: "科技", issuer: "中证", tv: "SSE:931071" },
-    { code: "399438", name: "绿色电力", desc: "绿色电力", tag: "周期", issuer: "中证", tv: "SZSE:399438" },
-    { code: "H30590", name: "中证机器人", desc: "工业机器人/人形机器人", tag: "科技", issuer: "中证", tv: "SSE:H30590" },
-    { code: "931066", name: "CS军工", desc: "国防/航空航天/军工装备", tag: "军工", issuer: "中证", tv: "SSE:931066" },
-    { code: "931409", name: "中证创新药", desc: "环保/固废/水务/清洁", tag: "环保", issuer: "中证", tv: "SSE:931409" },
-    { code: "931139", name: "CS消费", desc: "白酒/食品/零售/家电", tag: "消费", issuer: "中证", tv: "SSE:931139" },
-    { code: "000933", name: "中证医药", desc: "制药/生物科技/中药", tag: "医药", issuer: "中证", tv: "SSE:000933" },
-    { code: "399986", name: "CS银行", desc: "A股上市银行板块", tag: "金融", issuer: "中证", tv: "SSE:399986" },
-    { code: "930708", name: "中证有色金属", desc: "铜/铝/锂/钴等有色金属", tag: "周期", issuer: "中证", tv: "SSE:930708" },
-    { code: "000820", name: "CS煤炭", desc: "煤炭开采/洗选/焦化", tag: "周期", issuer: "中证", tv: "SSE:000820" },
-    { code: "399975", name: "证券", desc: "证券", tag: "周期", issuer: "中证", tv: "SSE:399975" },
-    { code: "H30199", name: "电力", desc: "电力", tag: "周期", issuer: "中证", tv: "SSE:H30199" },
-    { code: "930901", name: "动漫游戏", desc: "动漫游戏", tag: "周期", issuer: "中证", tv: "SSE:930901" },
-    { code: "000813", name: "中证化工", desc: "中证化工", tag: "周期", issuer: "中证", tv: "SSE:000813" },
-    { code: "931271", name: "通信设备", desc: "通信设备", tag: "周期", issuer: "中证", tv: "SSE:931271" },
-    { code: "399997", name: "白酒", desc: "白酒", tag: "周期", issuer: "中证", tv: "SSE:399997" },
-    { code: "930598", name: "稀土", desc: "稀土", tag: "周期", issuer: "中证", tv: "SSE:930598" },
-    { code: "399971", name: "传媒", desc: "传媒", tag: "周期", issuer: "中证", tv: "SSE:399971" },
-    { code: "159599", name: "芯片", desc: "芯片", tag: "周期", issuer: "中证", tv: "SZSE:159599" },
-    { code: "159326", name: "电网设备", desc: "电网设备", tag: "周期", issuer: "中证", tv: "SZSE:159326" }
-  ],
-  us: [
-    { code: "SPY", name: "SPDR S&P 500 ETF", desc: "标普500全市场大盘蓝筹", tag: "宽基", issuer: "SPDR", tv: "AMEX:SPY" },
-    { code: "QQQ", name: "Invesco Nasdaq-100", desc: "纳斯达克100科技成长龙头", tag: "宽基", issuer: "Invesco", tv: "NASDAQ:QQQ" },
-    { code: "XLK", name: "Technology Select Sector", desc: "苹果/微软/英伟达等科技巨头", tag: "科技", issuer: "SPDR", tv: "AMEX:XLK" },
-    { code: "SMH", name: "VanEck Semiconductor ETF", desc: "英伟达/AMD/台积电半导体链", tag: "半导体", issuer: "VanEck", tv: "NASDAQ:SMH" },
-    { code: "SOXX", name: "iShares Semiconductor ETF", desc: "费城半导体指数全链条", tag: "半导体", issuer: "iShares", tv: "NASDAQ:SOXX" },
-    { code: "BOTZ", name: "Global X Robotics & AI ETF", desc: "机器人/人工智能/自动化", tag: "AI/机器人", issuer: "Global X", tv: "NASDAQ:BOTZ" },
-    { code: "ARKK", name: "ARK Innovation ETF", desc: "颠覆性创新/AI/基因/太空", tag: "创新", issuer: "ARK", tv: "AMEX:ARKK" },
-    { code: "ICLN", name: "iShares Global Clean Energy", desc: "太阳能/风电/清洁能源全球", tag: "清洁能源", issuer: "iShares", tv: "NASDAQ:ICLN" },
-    { code: "LIT", name: "Global X Lithium & Battery", desc: "锂矿开采/电池制造产业链", tag: "电池", issuer: "Global X", tv: "AMEX:LIT" },
-    { code: "XLF", name: "Financial Select Sector", desc: "摩根大通/巴菲特等金融巨头", tag: "金融", issuer: "SPDR", tv: "AMEX:XLF" },
-    { code: "KRE", name: "SPDR S&P Regional Banking", desc: "中小型区域银行集合", tag: "银行", issuer: "SPDR", tv: "AMEX:KRE" },
-    { code: "XLV", name: "Health Care Select Sector", desc: "强生/辉瑞/联合健康等医疗", tag: "医疗", issuer: "SPDR", tv: "AMEX:XLV" },
-    { code: "IBB", name: "iShares Biotechnology ETF", desc: "纳斯达克生物科技指数", tag: "生物科技", issuer: "iShares", tv: "NASDAQ:IBB" },
-    { code: "XBI", name: "SPDR Biotech ETF", desc: "生物科技等权重，中小盘为主", tag: "生物科技", issuer: "SPDR", tv: "AMEX:XBI" },
-    { code: "XLE", name: "Energy Select Sector", desc: "埃克森美孚/雪佛龙等石油巨头", tag: "能源", issuer: "SPDR", tv: "AMEX:XLE" },
-    { code: "XLY", name: "Consumer Discretionary", desc: "亚马逊/特斯拉/麦当劳等可选消费", tag: "可选消费", issuer: "SPDR", tv: "AMEX:XLY" },
-    { code: "XLP", name: "Consumer Staples", desc: "宝洁/可口可乐/沃尔玛必需消费", tag: "必需消费", issuer: "SPDR", tv: "AMEX:XLP" },
-    { code: "XLI", name: "Industrial Select Sector", desc: "波音/霍尼韦尔等工业/国防", tag: "工业", issuer: "SPDR", tv: "AMEX:XLI" },
-    { code: "XLB", name: "Materials Select Sector", desc: "化工/矿业/原材料龙头", tag: "原材料", issuer: "SPDR", tv: "AMEX:XLB" },
-    { code: "XLU", name: "Utilities Select Sector", desc: "电力/天然气公用事业", tag: "公用事业", issuer: "SPDR", tv: "AMEX:XLU" },
-    { code: "XLRE", name: "Real Estate Select Sector", desc: "美国REITs房地产信托", tag: "房地产", issuer: "SPDR", tv: "AMEX:XLRE" },
-    { code: "XLC", name: "Communication Services", desc: "谷歌/Meta/Netflix等通信媒体", tag: "通信", issuer: "SPDR", tv: "AMEX:XLC" },
-    { code: "GDX", name: "VanEck Gold Miners ETF", desc: "全球黄金矿业公司", tag: "黄金", issuer: "VanEck", tv: "AMEX:GDX" },
-    { code: "JETS", name: "US Global Jets ETF", desc: "美国及全球航空公司", tag: "航空", issuer: "US Global", tv: "AMEX:JETS" },
-    { code: "IYR", name: "iShares US Real Estate ETF", desc: "美国REITs及房地产股票", tag: "房地产", issuer: "iShares", tv: "AMEX:IYR" },
-    { code: "XAU", name: "国际黄金", desc: "全球硬通货贵金属、避险抗通胀资产", tag: "贵金属", issuer: "国际现货市场", tv: "OANDA:XAUUSD" },
-    { code: "XAG", name: "国际白银", desc: "工业+避险双重属性、高波动贵金属", tag: "贵金属", issuer: "国际现货市场", tv: "OANDA:XAGUSD" },
-    { code: "BTC", name: "比特币", desc: "加密货币龙头、数字黄金、高波动加密资产", tag: "加密货币", issuer: "全球加密交易所", tv: "CRYPTO:BTCUSD" },
-    { code: "ETH", name: "以太坊", desc: "智能合约公链龙头、Defi底层基础设施", tag: "加密货币", issuer: "全球加密交易所", tv: "CRYPTO:ETHUSD" }
-  ],
-  
-};
-
-function tvUrl(tv) {
-  return `https://cn.tradingview.com/chart/?symbol=${encodeURIComponent(tv)}`;
-}
-
-function cnTvSymbol(code) {
-  const szse = ['399006','399431','399975','399932','399393','399396','399812','399986'];
-  const prefix = szse.some(c => code.startsWith(c.slice(0,1)==='3' ? '3' : 'x')) || code.startsWith('3') ? 'SZSE' : 'SSE';
-  return `${prefix}:${code}`;
-}
-
-function renderCn() {
-  const grid = document.getElementById('cn-grid');
-  grid.innerHTML = DATA.cn.map(d => `
-    <a class="card cn" href="${tvUrl(d.tv)}" target="_blank" rel="noopener" data-search="${d.code} ${d.name} ${d.desc} ${d.tag}">
-      <div class="card-top">
-        <span class="card-code">${d.code}</span>
-        <span class="card-tag">${d.tag}</span>
-      </div>
-      <div class="card-name">${d.name}</div>
-      <div class="card-desc">${d.desc}</div>
-      <div class="card-footer">
-        <span class="card-issuer">${d.issuer}</span>
-        <span class="tv-link">
-          TradingView
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </span>
-      </div>
-    </a>
-  `).join('');
-  updateCount('cn');
-}
-
-function renderUs() {
-  const grid = document.getElementById('us-grid');
-  grid.innerHTML = DATA.us.map(d => `
-    <a class="card us" href="${tvUrl(d.tv)}" target="_blank" rel="noopener" data-search="${d.code} ${d.name} ${d.desc} ${d.tag}">
-      <div class="card-top">
-        <span class="card-code">${d.code}</span>
-        <span class="card-tag">${d.tag}</span>
-      </div>
-      <div class="card-name">${d.name}</div>
-      <div class="card-desc">${d.desc}</div>
-      <div class="card-footer">
-        <span class="card-issuer">${d.issuer}</span>
-        <span class="tv-link">
-          TradingView
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </span>
-      </div>
-    </a>
-  `).join('');
-  updateCount('us');
-}
-
-function renderCompare() {
-  const grid = document.getElementById('compare-grid');
-  if (!grid || !DATA.compare) return;
-  grid.innerHTML = DATA.compare.map(d => `
-    <div class="compare-row">
-      <div class="compare-sector">${d.sector}</div>
-      <div class="compare-item">
-        <span class="compare-label">🇨🇳 中国</span>
-        <div class="compare-code-wrap">
-          ${d.cn.map(c => {
-            const tv = DATA.cn.find(x => x.code === c.code);
-            const url = tv ? tvUrl(tv.tv) : '#';
-            return `<a class="ccode cn" href="${url}" target="_blank" rel="noopener">${c.label}</a>`;
-          }).join('')}
+        <!-- 搜索 -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 搜索书签..." onkeyup="filterBookmarks()">
         </div>
-      </div>
-      <div class="compare-item">
-        <span class="compare-label">🇺🇸 美国</span>
-        <div class="compare-code-wrap">
-          ${d.us.map(c => {
-            const tv = DATA.us.find(x => x.code === c.code);
-            const url = tv ? tvUrl(tv.tv) : '#';
-            return `<a class="ccode us" href="${url}" target="_blank" rel="noopener">${c.label}</a>`;
-          }).join('')}
+
+        <!-- 添加新书签 -->
+        <div class="add-form" id="addForm">
+            <h3>➕ 添加新书签</h3>
+            <input type="text" id="newName" placeholder="网站名称" style="margin-bottom:10px;width:100%;padding:12px;border-radius:12px;border:1px solid #e2e8f0;">
+            <input type="text" id="newUrl" placeholder="网址 (https://...)" style="margin-bottom:15px;width:100%;padding:12px;border-radius:12px;border:1px solid #e2e8f0;">
+            <button onclick="addBookmark()" style="background:#6366f1;color:white;border:none;padding:12px 24px;border-radius:9999px;cursor:pointer;">添加</button>
         </div>
-      </div>
+
+        <div class="grid" id="bookmarksGrid">
+            <!-- 书签会通过JS动态添加 -->
+        </div>
+
+        <div class="footer">
+            点击卡片即可访问 • 支持搜索 • 数据保存在浏览器本地
+        </div>
     </div>
-  `).join('');
-}
 
-function updateCount(market) {
-  const grid = document.getElementById(market + '-grid');
-  const visible = grid.querySelectorAll('.card:not(.hidden)').length;
-  const total = DATA[market].length;
-  document.getElementById(market + '-count').textContent = visible === total ? `${total} 个` : `${visible} / ${total}`;
-}
+    <script>
+        let bookmarks = [
+            {name: "每日中美行业指数", url: "https://qzhan-neiro.github.io/index/select_index_nav.html"},
+            {name: "每日任务", url: "https://qzhan-neiro.github.io/index/daily-briefing.html"},
+            {name: "图片配置", url: "https://qzhan-neiro.github.io/index/slide.html"},
+            {name: "微信公众号编辑", url: "https://qzhan-neiro.github.io/index/wechat.html"},
+            {name: "每日计划", url: "https://qzhan-neiro.github.io/index/plan.html"},
+        ];
 
-function filterCards(gridId, query) {
-  const market = gridId.replace('-grid', '');
-  const q = query.toLowerCase().trim();
-  const grid = document.getElementById(gridId);
-  const cards = grid.querySelectorAll('.card');
-  cards.forEach(card => {
-    const match = !q || card.dataset.search.toLowerCase().includes(q);
-    card.classList.toggle('hidden', !match);
-  });
-  const visible = grid.querySelectorAll('.card:not(.hidden)').length;
-  document.getElementById(market + '-empty').classList.toggle('hidden', visible > 0);
-  updateCount(market);
-}
+        function renderBookmarks(filteredBookmarks) {
+            const grid = document.getElementById('bookmarksGrid');
+            grid.innerHTML = '';
+            
+            filteredBookmarks.forEach(bookmark => {
+                const card = document.createElement('div');
+                card.className = 'bookmark-card';
+                card.innerHTML = `
+                    <div class="bookmark-name">${bookmark.name}</div>
+                    <div class="bookmark-url">${bookmark.url}</div>
+                    <a href="${bookmark.url}" target="_blank" class="visit-btn">立即访问 →</a>
+                `;
+                grid.appendChild(card);
+            });
+        }
 
-function switchTab(id) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.tab.${id}`).classList.add('active');
-  document.getElementById(id).classList.add('active');
-}
+        function filterBookmarks() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = bookmarks.filter(b => 
+                b.name.toLowerCase().includes(query) || 
+                b.url.toLowerCase().includes(query)
+            );
+            renderBookmarks(filtered);
+        }
 
-renderCn();
-renderUs();
-renderCompare();
-updateCount('cn');
-updateCount('us');
+        function addBookmark() {
+            const name = document.getElementById('newName').value.trim();
+            const url = document.getElementById('newUrl').value.trim();
+            
+            if (name && url) {
+                bookmarks.unshift({name, url});
+                renderBookmarks(bookmarks);
+                document.getElementById('newName').value = '';
+                document.getElementById('newUrl').value = '';
+                alert('✅ 添加成功！');
+            } else {
+                alert('请填写名称和网址');
+            }
+        }
 
-// ── 优质个股数据 ──────────────────────────────────────────────
-const STOCKS = {
-  cn: [
-    { code: "600519", name: "贵州茅台", tag: "白酒", sector: "消费", desc: "中国高端白酒绝对龙头，强定价权与品牌护城河", stars: 5, tv: "SSE:600519" },
-    { code: "600036", name: "招商银行", tag: "银行", sector: "金融", desc: "零售之王，ROE持续领跑国内股份行", stars: 5, tv: "SSE:600036" },
-    { code: "600900", name: "长江电力", tag: "水电", sector: "公用事业", desc: "全球装机最大水电公司，稳定现金流高分红", stars: 5, tv: "SSE:600900" },
-    { code: "300750", name: "宁德时代", tag: "电池", sector: "新能源", desc: "全球动力/储能电池龙头，技术壁垒与规模优势突出", stars: 5, tv: "SZSE:300750" },
-    { code: "002594", name: "比亚迪", tag: "新能源车", sector: "新能源", desc: "全球销量第一新能源车企，垂直整合全产业链", stars: 5, tv: "SZSE:002594" },
-    { code: "603259", name: "药明康德", tag: "CRO", sector: "医药", desc: "全球最大医药研发外包平台，一体化服务", stars: 4, tv: "SSE:603259" },
-    { code: "600276", name: "恒瑞医药", tag: "创新药", sector: "医药", desc: "国内创新药研发龙头，抗肿瘤/麻醉管线丰富", stars: 4, tv: "SSE:600276" },
-    { code: "688981", name: "中芯国际", tag: "半导体", sector: "科技", desc: "中国大陆最大晶圆代工厂，14nm以上自主可控", stars: 4, tv: "SSE:688981" },
-    { code: "000858", name: "五粮液", tag: "白酒", sector: "消费", desc: "次高端白酒第一梯队，渠道深厚全国布局", stars: 4, tv: "SZSE:000858" },
-    { code: "601166", name: "兴业银行", tag: "银行", sector: "金融", desc: "绿色金融/同业业务领先，股息率具吸引力", stars: 3, tv: "SSE:601166" },
-  ],
-  us: [
-    { code: "NVDA", name: "英伟达", tag: "AI芯片", sector: "科技", desc: "GPU/AI算力绝对龙头，数据中心收入爆炸式增长", stars: 5, tv: "NASDAQ:NVDA" },
-    { code: "AAPL", name: "苹果", tag: "消费电子", sector: "科技", desc: "全球市值第一，iPhone生态+服务业务双引擎", stars: 5, tv: "NASDAQ:AAPL" },
-    { code: "MSFT", name: "微软", tag: "云+AI", sector: "科技", desc: "Azure云计算+Copilot AI双轮驱动，企业护城河深厚", stars: 5, tv: "NASDAQ:MSFT" },
-    { code: "GOOGL", name: "谷歌", tag: "搜索/云", sector: "科技", desc: "搜索+YouTube+GCP三大现金牛，AI搜索积极布局", stars: 5, tv: "NASDAQ:GOOGL" },
-    { code: "AMZN", name: "亚马逊", tag: "云/电商", sector: "科技", desc: "AWS云计算+电商+广告三驾马车，利润率持续释放", stars: 5, tv: "NASDAQ:AMZN" },
-    { code: "AVGO", name: "博通", tag: "AI芯片/网络", sector: "科技", desc: "定制AI ASIC芯片+网络交换龙头，VMware协同加速", stars: 5, tv: "NASDAQ:AVGO" },
-    { code: "TSM", name: "台积电", tag: "晶圆代工", sector: "半导体", desc: "全球最先进晶圆代工，3nm/2nm技术绝对领先", stars: 5, tv: "NYSE:TSM" },
-    { code: "BRK.B", name: "伯克希尔", tag: "价值投资", sector: "金融", desc: "巴菲特旗舰，多元化持股+保险浮存金低风险复利", stars: 5, tv: "NYSE:BRK.B" },
-    { code: "V", name: "Visa", tag: "支付网络", sector: "金融", desc: "全球最大支付网络，轻资产高ROE，跨境支付复苏受益", stars: 5, tv: "NYSE:V" },
-    { code: "COST", name: "好市多", tag: "仓储零售", sector: "消费", desc: "会员制仓储零售护城河极深，客户留存率近90%", stars: 5, tv: "NASDAQ:COST" },
-    { code: "LLY", name: "礼来", tag: "GLP-1", sector: "医药", desc: "司美格鲁肽竞品Tirzepatide全球大卖，减肥药赛道龙头", stars: 5, tv: "NYSE:LLY" },
-    { code: "META", name: "Meta", tag: "社交/AI", sector: "科技", desc: "社交媒体广告龙头，Llama开源AI+AR眼镜双押注", stars: 4, tv: "NASDAQ:META" },
-    { code: "TSLA", name: "特斯拉", tag: "新能源/AI", sector: "新能源", desc: "电动车先驱，FSD自动驾驶+Optimus人形机器人期权", stars: 4, tv: "NASDAQ:TSLA" },
-    { code: "JPM", name: "摩根大通", tag: "投行/银行", sector: "金融", desc: "美国最大银行，ROE持续领跑同业，股息稳健", stars: 4, tv: "NYSE:JPM" },
-    { code: "UNH", name: "联合健康", tag: "医疗保险", sector: "医疗", desc: "美国最大商业医保+Optum医疗服务双轮驱动", stars: 4, tv: "NYSE:UNH" },
-    { code: "PLTR", name: "Palantir", tag: "AI数据", sector: "科技", desc: "政府+企业AI数据平台，AIP产品商业化加速", stars: 4, tv: "NASDAQ:PLTR" },
-    { code: "APP", name: "AppLovin", tag: "AI广告", sector: "科技", desc: "移动广告AI算法颠覆行业，AXON引擎ROI极强", stars: 4, tv: "NASDAQ:APP" },
-  ]
-};
-
-function renderStocks() {
-  const starsHtml = n => '<span style="color:var(--accent-stocks)">' + '★'.repeat(n) + '</span><span style="opacity:0.25">☆</span>'.repeat(5 - n);
-  ['cn', 'us'].forEach(market => {
-    const grid = document.getElementById('stocks-' + market + '-grid');
-    grid.innerHTML = STOCKS[market].map(d => `
-      <a class="card stocks" href="https://cn.tradingview.com/chart/?symbol=${encodeURIComponent(d.tv)}" target="_blank" rel="noopener">
-        <div class="card-top">
-          <span class="card-code">${d.code}</span>
-          <span class="card-tag">${d.tag}</span>
-        </div>
-        <div class="card-meta"><span class="card-sector">${d.sector}</span></div>
-        <div class="card-name">${d.name}</div>
-        <div class="card-desc">${d.desc}</div>
-        <div class="card-footer">
-          <span class="star-rating">${starsHtml(d.stars)}</span>
-          <span class="tv-link">
-            TradingView
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </span>
-        </div>
-      </a>
-    `).join('');
-  });
-}
-
-renderStocks();
-</script>
+        // 初始化
+        window.onload = () => {
+            renderBookmarks(bookmarks);
+        };
+    </script>
 </body>
 </html>
