@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>封面图片生成器</title>
+<style>
+  :root{
+    --bg-black:#0b0b0b;
+    --panel-black:#151515;
+    --orange:#ff9000;
+    --orange-dim:#cc7300;
+    --white:#f5f5f5;
+    --line:#2a2a2a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+    background:var(--bg-black);
+    color:var(--white);
+    display:flex;
+    min-height:100vh;
+  }
+  h1{
+    font-size:18px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--orange);
+    margin:0 0 18px 0;
+    font-weight:800;
+    border-bottom:2px solid var(--orange);
+    padding-bottom:10px;
+  }
+  #sidebar{
+    width:340px;
+    min-width:340px;
+    background:var(--panel-black);
+    padding:22px;
+    overflow-y:auto;
+    border-right:1px solid var(--line);
+  }
+  #stage{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:30px;
+    position:relative;
+  }
+  canvas{
+    max-width:100%;
+    max-height:80vh;
+    background:#000;
+    box-shadow:0 0 0 1px var(--line), 0 20px 60px rgba(0,0,0,.6);
+    cursor:default;
+  }
+  .section{
+    margin-bottom:22px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+  }
+  .section:last-child{border-bottom:none;}
+  label{
+    display:block;
+    font-size:11px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#999;
+    margin-bottom:6px;
+  }
+  input[type=file]{
+    width:100%;
+    color:#ccc;
+    font-size:12px;
+  }
+  button{
+    background:var(--orange);
+    color:#000;
+    border:none;
+    font-weight:800;
+    letter-spacing:.5px;
+    padding:10px 14px;
+    border-radius:3px;
+    cursor:pointer;
+    font-size:13px;
+    transition:background .15s, transform .1s;
+  }
+  button:hover{background:#ffa733;}
+  button:active{transform:scale(.97);}
+  button.secondary{
+    background:transparent;
+    border:1px solid var(--line);
+    color:#ddd;
+  }
+  button.secondary:hover{border-color:var(--orange); color:var(--orange);}
+  button.danger{
+    background:transparent;
+    border:1px solid #663;
+    color:#e88;
+  }
+  .btn-row{display:flex; gap:8px; flex-wrap:wrap;}
+  textarea, input[type=text]{
+    width:100%;
+    background:#000;
+    border:1px solid var(--line);
+    color:#fff;
+    padding:8px;
+    font-size:14px;
+    border-radius:3px;
+    resize:vertical;
+  }
+  input[type=range]{
+    width:100%;
+    accent-color:var(--orange);
+  }
+  .row-two{display:flex; gap:10px;}
+  .row-two > div{flex:1;}
+  .layer-item{
+    padding:8px 10px;
+    background:#000;
+    border:1px solid var(--line);
+    border-radius:3px;
+    margin-bottom:6px;
+    font-size:12px;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:#bbb;
+  }
+  .layer-item.active{
+    border-color:var(--orange);
+    color:var(--orange);
+  }
+  .layer-item span.del{
+    color:#663;
+    font-weight:700;
+    padding:0 4px;
+  }
+  .layer-item span.del:hover{color:#e33;}
+  .swatches{display:flex; gap:8px; margin-top:6px;}
+  .swatch{
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid var(--line);
+    cursor:pointer;
+  }
+  .preset-btn{
+    display:block;
+    width:100%;
+    text-align:left;
+    background:#000;
+    border:1px solid var(--line);
+    color:#ccc;
+    padding:9px 10px;
+    margin-bottom:8px;
+    font-size:12px;
+    font-weight:600;
+  }
+  .preset-btn:hover{border-color:var(--orange); color:var(--orange);}
+  select{
+    width:100%;
+    background:#000;
+    color:#fff;
+    border:1px solid var(--line);
+    padding:8px;
+    border-radius:3px;
+    font-size:13px;
+  }
+  .hint{font-size:11px; color:#666; margin-top:4px;}
+  input[type=color]{
+    -webkit-appearance:none;
+    width:40px;height:30px;
+    border:1px solid var(--line);
+    background:none;
+    padding:0;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>封面生成器</h1>
+
+  <div class="section">
+    <label>1 · 背景图片</label>
+    <input type="file" id="imgInput" accept="image/*">
+    <div class="hint">支持 JPG / PNG，自动铺满画布</div>
+  </div>
+
+  <div class="section">
+    <label>2 · 画布尺寸</label>
+    <select id="canvasSize">
+      <option value="1080x1920" selected>📱 手机竖屏 9:16 (1080×1920)</option>
+      <option value="1080x1440">📱 手机海报 3:4 (1080×1440)</option>
+      <option value="1080x1350">📱 小红书 4:5 (1080×1350)</option>
+      <option value="1080x1080">1:1 方形 (1080×1080)</option>
+      <option value="1280x720">16:9 横版 (1280×720)</option>
+      <option value="1920x1080">Full HD 横版 (1920×1080)</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <label>3 · 快速配色预设</label>
+    <button class="preset-btn" data-preset="classic">■ 经典黑橙 — 黑底橙字</button>
+    <button class="preset-btn" data-preset="white-orange">■ 白字橙边 — 描边强调</button>
+    <button class="preset-btn" data-preset="orange-block">■ 橙底黑字 — 色块标签</button>
+  </div>
+
+  <div class="section">
+    <label>4 · 文字图层</label>
+    <div class="btn-row" style="margin-bottom:10px;">
+      <button id="addText">+ 添加文字</button>
+      <button class="secondary" id="dupText">复制</button>
+      <button class="danger" id="delText">删除</button>
+    </div>
+    <div id="layerList"></div>
+  </div>
+
+  <div class="section" id="textControls" style="display:none;">
+    <label>文字内容</label>
+    <textarea id="textContent" rows="2"></textarea>
+
+    <div class="row-two" style="margin-top:12px;">
+      <div>
+        <label>字号 <span id="sizeVal"></span></label>
+        <input type="range" id="fontSize" min="10" max="300" value="60">
+      </div>
+      <div>
+        <label>字重</label>
+        <select id="fontWeight">
+          <option value="400">常规</option>
+          <option value="700" selected>加粗</option>
+          <option value="900">特粗</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <label>字体</label>
+      <select id="fontFamily">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+        <option value="Impact, sans-serif">Impact</option>
+        <option value="Georgia, serif">Georgia (衬线)</option>
+      </select>
+    </div>
+
+    <div class="row-two" style="margin-top:12px;">
+      <div>
+        <label>文字颜色</label>
+        <input type="color" id="textColor" value="#ffffff">
+        <div class="swatches">
+          <div class="swatch" style="background:#ffffff" data-color="#ffffff"></div>
+          <div class="swatch" style="background:#ff9000" data-color="#ff9000"></div>
+          <div class="swatch" style="background:#000000" data-color="#000000"></div>
+        </div>
+      </div>
+      <div>
+        <label>描边颜色</label>
+        <input type="color" id="strokeColor" value="#000000">
+        <label style="margin-top:8px;">描边宽度 <span id="strokeVal"></span></label>
+        <input type="range" id="strokeWidth" min="0" max="20" value="0">
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <label>位置 X <span id="xVal"></span>%</label>
+      <input type="range" id="posX" min="0" max="100" value="50">
+      <label style="margin-top:8px;">位置 Y <span id="yVal"></span>%</label>
+      <input type="range" id="posY" min="0" max="100" value="50">
+    </div>
+
+    <div class="hint">提示：也可以直接在画布上按住文字拖动位置</div>
+  </div>
+
+  <div class="section">
+    <label>5 · 导出</label>
+    <button id="exportBtn" style="width:100%;">下载封面图 PNG</button>
+  </div>
+</div>
+
+<div id="stage">
+  <canvas id="canvas" width="1080" height="1920"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let bgImage = null;
+let layers = [];
+let activeLayerId = null;
+let idCounter = 1;
+
+function addLayer(overrides={}){
+  const layer = Object.assign({
+    id: idCounter++,
+    text: '在此输入文字',
+    x: 50, y: 50,
+    fontSize: 60,
+    fontWeight: '700',
+    fontFamily: "Arial, sans-serif",
+    color: '#ffffff',
+    strokeColor: '#000000',
+    strokeWidth: 4,
+  }, overrides);
+  layers.push(layer);
+  activeLayerId = layer.id;
+  refreshLayerList();
+  syncControlsFromLayer();
+  draw();
+}
+
+function getActiveLayer(){
+  return layers.find(l => l.id === activeLayerId);
+}
+
+function refreshLayerList(){
+  const list = document.getElementById('layerList');
+  list.innerHTML = '';
+  layers.forEach(l => {
+    const div = document.createElement('div');
+    div.className = 'layer-item' + (l.id === activeLayerId ? ' active' : '');
+    div.innerHTML = `<span>${l.text.slice(0,18) || '(空文字)'}</span><span class="del" data-id="${l.id}">✕</span>`;
+    div.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('del')) return;
+      activeLayerId = l.id;
+      refreshLayerList();
+      syncControlsFromLayer();
+      draw();
+    });
+    div.querySelector('.del').addEventListener('click', ()=>{
+      layers = layers.filter(x => x.id !== l.id);
+      if(activeLayerId === l.id) activeLayerId = layers.length ? layers[layers.length-1].id : null;
+      refreshLayerList();
+      syncControlsFromLayer();
+      draw();
+    });
+    list.appendChild(div);
+  });
+}
+
+function syncControlsFromLayer(){
+  const layer = getActiveLayer();
+  const controls = document.getElementById('textControls');
+  if(!layer){ controls.style.display = 'none'; return; }
+  controls.style.display = 'block';
+  document.getElementById('textContent').value = layer.text;
+  document.getElementById('fontSize').value = layer.fontSize;
+  document.getElementById('sizeVal').textContent = layer.fontSize;
+  document.getElementById('fontWeight').value = layer.fontWeight;
+  document.getElementById('fontFamily').value = layer.fontFamily;
+  document.getElementById('textColor').value = layer.color;
+  document.getElementById('strokeColor').value = layer.strokeColor;
+  document.getElementById('strokeWidth').value = layer.strokeWidth;
+  document.getElementById('strokeVal').textContent = layer.strokeWidth;
+  document.getElementById('posX').value = layer.x;
+  document.getElementById('xVal').textContent = layer.x;
+  document.getElementById('posY').value = layer.y;
+  document.getElementById('yVal').textContent = layer.y;
+}
+
+function draw(){
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,w,h);
+
+  if(bgImage){
+    const iw = bgImage.width, ih = bgImage.height;
+    const scale = Math.max(w/iw, h/ih);
+    const dw = iw*scale, dh = ih*scale;
+    const dx = (w-dw)/2, dy = (h-dh)/2;
+    ctx.drawImage(bgImage, dx, dy, dw, dh);
+  }
+
+  layers.forEach(layer => {
+    ctx.save();
+    ctx.font = `${layer.fontWeight} ${layer.fontSize}px ${layer.fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const px = w * layer.x/100;
+    const py = h * layer.y/100;
+    const lines = layer.text.split('\n');
+    const lineHeight = layer.fontSize * 1.15;
+    const startY = py - (lines.length-1)*lineHeight/2;
+    lines.forEach((line, i) => {
+      const ly = startY + i*lineHeight;
+      if(layer.strokeWidth > 0){
+        ctx.lineWidth = layer.strokeWidth;
+        ctx.strokeStyle = layer.strokeColor;
+        ctx.strokeText(line, px, ly);
+      }
+      ctx.fillStyle = layer.color;
+      ctx.fillText(line, px, ly);
+    });
+    ctx.restore();
+  });
+}
+
+// ---- image upload ----
+document.getElementById('imgInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{ bgImage = img; draw(); };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---- canvas size ----
+document.getElementById('canvasSize').addEventListener('change', (e)=>{
+  const [w,h] = e.target.value.split('x').map(Number);
+  canvas.width = w; canvas.height = h;
+  draw();
+});
+
+// ---- add / duplicate / delete ----
+document.getElementById('addText').addEventListener('click', ()=> addLayer());
+document.getElementById('dupText').addEventListener('click', ()=>{
+  const l = getActiveLayer();
+  if(l) addLayer(Object.assign({}, l, {x: Math.min(l.x+5,100), y: Math.min(l.y+5,100)}));
+});
+document.getElementById('delText').addEventListener('click', ()=>{
+  if(!activeLayerId) return;
+  layers = layers.filter(l => l.id !== activeLayerId);
+  activeLayerId = layers.length ? layers[layers.length-1].id : null;
+  refreshLayerList();
+  syncControlsFromLayer();
+  draw();
+});
+
+// ---- control bindings ----
+function bindControl(id, prop, isNumber, displayId){
+  document.getElementById(id).addEventListener('input', (e)=>{
+    const l = getActiveLayer();
+    if(!l) return;
+    l[prop] = isNumber ? Number(e.target.value) : e.target.value;
+    if(displayId) document.getElementById(displayId).textContent = e.target.value;
+    if(prop === 'text') refreshLayerList();
+    draw();
+  });
+}
+bindControl('textContent','text',false);
+bindControl('fontSize','fontSize',true,'sizeVal');
+bindControl('fontWeight','fontWeight',false);
+bindControl('fontFamily','fontFamily',false);
+bindControl('textColor','color',false);
+bindControl('strokeColor','strokeColor',false);
+bindControl('strokeWidth','strokeWidth',true,'strokeVal');
+bindControl('posX','x',true,'xVal');
+bindControl('posY','y',true,'yVal');
+
+document.querySelectorAll('.swatch').forEach(sw=>{
+  sw.addEventListener('click', ()=>{
+    const l = getActiveLayer();
+    if(!l) return;
+    l.color = sw.dataset.color;
+    document.getElementById('textColor').value = sw.dataset.color;
+    draw();
+  });
+});
+
+// ---- presets ----
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const l = getActiveLayer();
+    if(!l){ addLayer(); }
+    const layer = getActiveLayer();
+    const preset = btn.dataset.preset;
+    if(preset === 'classic'){
+      layer.color = '#ff9000'; layer.strokeColor = '#000000'; layer.strokeWidth = 0;
+    } else if(preset === 'white-orange'){
+      layer.color = '#ffffff'; layer.strokeColor = '#ff9000'; layer.strokeWidth = 6;
+    } else if(preset === 'orange-block'){
+      layer.color = '#000000'; layer.strokeColor = '#ff9000'; layer.strokeWidth = 0;
+    }
+    syncControlsFromLayer();
+    draw();
+  });
+});
+
+// ---- drag on canvas ----
+let dragging = false;
+let dragLayer = null;
+
+function getCanvasPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY
+  };
+}
+
+function hitTest(pos){
+  for(let i=layers.length-1; i>=0; i--){
+    const l = layers[i];
+    ctx.font = `${l.fontWeight} ${l.fontSize}px ${l.fontFamily}`;
+    const lines = l.text.split('\n');
+    let maxWidth = 0;
+    lines.forEach(line=>{ maxWidth = Math.max(maxWidth, ctx.measureText(line).width); });
+    const lineHeight = l.fontSize * 1.15;
+    const totalHeight = lines.length * lineHeight;
+    const px = canvas.width * l.x/100;
+    const py = canvas.height * l.y/100;
+    if(pos.x > px - maxWidth/2 && pos.x < px + maxWidth/2 &&
+       pos.y > py - totalHeight/2 && pos.y < py + totalHeight/2){
+      return l;
+    }
+  }
+  return null;
+}
+
+function startDrag(e){
+  const pos = getCanvasPos(e);
+  const hit = hitTest(pos);
+  if(hit){
+    dragging = true;
+    dragLayer = hit;
+    activeLayerId = hit.id;
+    refreshLayerList();
+    syncControlsFromLayer();
+  }
+}
+function moveDrag(e){
+  if(!dragging || !dragLayer) return;
+  const pos = getCanvasPos(e);
+  dragLayer.x = Math.min(100, Math.max(0, pos.x / canvas.width * 100));
+  dragLayer.y = Math.min(100, Math.max(0, pos.y / canvas.height * 100));
+  document.getElementById('posX').value = dragLayer.x.toFixed(1);
+  document.getElementById('xVal').textContent = dragLayer.x.toFixed(1);
+  document.getElementById('posY').value = dragLayer.y.toFixed(1);
+  document.getElementById('yVal').textContent = dragLayer.y.toFixed(1);
+  draw();
+}
+function endDrag(){ dragging = false; dragLayer = null; }
+
+canvas.addEventListener('mousedown', startDrag);
+canvas.addEventListener('mousemove', moveDrag);
+canvas.addEventListener('mouseup', endDrag);
+canvas.addEventListener('mouseleave', endDrag);
+canvas.addEventListener('touchstart', startDrag);
+canvas.addEventListener('touchmove', moveDrag);
+canvas.addEventListener('touchend', endDrag);
+
+// ---- export ----
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const link = document.createElement('a');
+  link.download = 'cover.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+// ---- init ----
+addLayer({text:'标题文字', fontSize:120, x:50, y:50, color:'#ffffff', strokeColor:'#000000', strokeWidth:6});
+draw();
+</script>
+</body>
+</html>
