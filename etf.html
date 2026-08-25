@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF 筛选卡片生成器</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --bg-color: #f0f2f5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: var(--bg-color);
+            padding: 30px 20px;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a1a2e;
+            margin-bottom: 40px;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        /* 左侧表格区域 */
+        .table-section {
+            flex: 1;
+            min-width: 500px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #16213e;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 优化表格滚动体验 */
+        .table-wrapper {
+            max-height: 60vh;
+            overflow-y: auto;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f0f2f5;
+        }
+
+        /* 自定义滚动条 */
+        .table-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        th {
+            background: #fafbfc;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 0 #f0f2f5;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .code {
+            font-family: "SF Mono", "Fira Code", monospace;
+            color: var(--primary-color);
+            font-weight: 600;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        select {
+            width: 140px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat calc(100% - 12px) center;
+            appearance: none;
+            padding-right: 30px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        }
+
+        select.status-pass {
+            border-color: var(--success-color);
+            background-color: #e8f8f0;
+            color: var(--success-color);
+        }
+
+        select.status-fail {
+            border-color: var(--danger-color);
+            background-color: #fdf0ef;
+            color: var(--danger-color);
+        }
+
+        select.status-watch {
+            border-color: var(--warning-color);
+            background-color: #fef9e7;
+            color: var(--warning-color);
+        }
+
+        /* 按钮 */
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            margin-top: auto;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            flex: 0 0 auto;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        /* 右侧卡片预览区域 - 悬浮固定 */
+        .preview-section {
+            width: 420px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 30px;
+        }
+
+        .preview-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #16213e;
+            text-align: center;
+        }
+
+        /* 卡片样式 */
+        .card {
+            width: 100%;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,1);
+            transition: all 0.3s ease;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+        }
+
+        .card-header h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            letter-spacing: 0.5px;
+        }
+
+        .card-header .date {
+            font-size: 14px;
+            opacity: 0.8;
+            position: relative;
+            font-weight: 300;
+        }
+
+        .card-header .badge {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-body {
+            padding: 30px;
+            min-height: 200px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .section-title .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .section-title.pass .icon { background: #e8f8f0; }
+        .section-title.watch .icon { background: #fef9e7; }
+        .section-title.fail .icon { background: #fdf0ef; }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .tag-pass {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .tag-watch {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .tag-fail {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .tag .code {
+            font-size: 12px;
+            opacity: 0.8;
+            font-family: "SF Mono", monospace;
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .card-footer {
+            padding: 24px 30px;
+            background: #f8fafc;
+            border-top: 1px dashed #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-footer .stats {
+            font-size: 14px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .card-footer .stats .pass-count { color: var(--success-color); font-weight: 700; }
+        .card-footer .stats .watch-count { color: var(--warning-color); font-weight: 700; }
+        .card-footer .stats .fail-count { color: var(--danger-color); font-weight: 700; }
+
+        .card-footer .logo {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .empty-state .emoji {
+            font-size: 56px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .download-hint {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .table-section {
+                min-width: auto;
+                width: 100%;
+            }
+            .preview-section {
+                width: 100%;
+                max-width: 500px;
+                margin: 0 auto;
+                position: relative; /* 移动端取消悬浮 */
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 ETF 筛选卡片生成器</h1>
+        
+        <div class="main-content">
+            <!-- 左侧：选择表格 -->
+            <div class="table-section">
+                <h2>
+                    <span>① 选择标的状态</span>
+                    <span style="font-size: 14px; color: #94a3b8; font-weight: normal;">实时联动预览</span>
+                </h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>代码</th>
+                                <th>名称</th>
+                                <th>决策状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="resetAll()">
+                        🔄 重置内容
+                    </button>
+                    <button class="btn btn-primary" onclick="generateImage()">
+                        📸 导出图片卡片
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右侧：卡片预览 -->
+            <div class="preview-section">
+                <h2>② 卡片实时预览</h2>
+                <div id="cardContainer">
+                    <div class="card" id="captureCard">
+                        <div class="card-header">
+                            <h3>我的 ETF 观察清单</h3>
+                            <p class="date" id="cardDate"></p>
+                            <span class="badge">每日复盘</span>
+                        </div>
+                        <div class="card-body" id="cardBody">
+                            <div class="empty-state">
+                                <div class="emoji">📋</div>
+                                <p>请在左侧选择标的状态</p>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="stats" id="cardStats">
+                                <span class="pass-count">✅ 0</span>
+                                <span class="watch-count">⭐ 0</span>
+                                <span class="fail-count">❌ 0</span>
+                            </div>
+                            <div class="logo">ETF Tracker Pro</div>
+                        </div>
+                    </div>
+                </div>
+                <p class="download-hint">💡 图片生成后将自动保存到本地</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ETF 数据
+        const etfData = [
+            { code: '588000', name: '科创50' },
+            { code: '161129', name: '原油LOF' },
+            { code: '159995', name: '芯片ETF' },
+            { code: '159558', name: '半导体设备' },
+            { code: '513880', name: '日经ETF' },
+            { code: '159321', name: '黄金股' },
+            { code: '159915', name: '创业板' },
+            { code: '563360', name: 'A500' },
+            { code: '159796', name: '电池ETF' },
+            { code: '516080', name: '创新药' },
+            { code: '516150', name: '稀土ETF' },
+            { code: '512800', name: '银行ETF' },
+            { code: '512000', name: '券商ETF' },
+            { code: '159869', name: '游戏ETF' },
+            { code: '159870', name: '化工ETF' },
+            { code: '510880', name: '红利ETF' },
+            { code: '159667', name: '工业母机' },
+            { code: '159638', name: '高端装备' },
+            { code: '512400', name: '有色金属' }
+        ];
+
+        // 设置当前日期
+        document.getElementById('cardDate').textContent = new Date().toLocaleDateString('zh-CN', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+
+        // 初始化表格
+        function initTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = etfData.map(item => `
+                <tr>
+                    <td><span class="code">${item.code}</span></td>
+                    <td style="font-weight: 500;">${item.name}</td>
+                    <td>
+                        <select onchange="handleSelectChange(this)" data-code="${item.code}" data-name="${item.name}">
+                            <option value="">-- 请选择 --</option>
+                            <option value="pass">✅ 坚决通过</option>
+                            <option value="watch">⭐ 重点关注</option>
+                            <option value="fail">❌ 不予通过</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 处理下拉框改变事件 (新增实时预览联动)
+        function handleSelectChange(select) {
+            // 更新自身样式
+            select.className = '';
+            if (select.value === 'pass') select.className = 'status-pass';
+            else if (select.value === 'fail') select.className = 'status-fail';
+            else if (select.value === 'watch') select.className = 'status-watch';
+            
+            // 触发预览更新
+            updatePreview();
+        }
+
+        // 收集数据
+        function collectData() {
+            const selects = document.querySelectorAll('#tableBody select');
+            const data = { pass: [], watch: [], fail: [] };
+            
+            selects.forEach(select => {
+                const value = select.value;
+                if (value) {
+                    data[value].push({
+                        code: select.dataset.code,
+                        name: select.dataset.name
+                    });
+                }
+            });
+            
+            return data;
+        }
+
+        // 更新预览区域 (从原来的 renderCard 拆分)
+        function updatePreview() {
+            const data = collectData();
+            const cardBody = document.getElementById('cardBody');
+            const cardStats = document.getElementById('cardStats');
+            
+            let html = '';
+            let hasContent = false;
+
+            // 渲染数据块的辅助函数
+            const renderSection = (items, type, icon, title, tagClass) => {
+                if (items.length === 0) return '';
+                hasContent = true;
+                return `
+                    <div class="section">
+                        <div class="section-title ${type}">
+                            <span class="icon">${icon}</span>
+                            <span>${title}</span>
+                        </div>
+                        <div class="tags">
+                            ${items.map(item => `
+                                <span class="tag ${tagClass}">
+                                    ${item.name}
+                                    <span class="code">${item.code}</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            };
+
+            html += renderSection(data.pass, 'pass', '✅', '坚决通过', 'tag-pass');
+            html += renderSection(data.watch, 'watch', '⭐', '重点关注', 'tag-watch');
+            html += renderSection(data.fail, 'fail', '❌', '不予通过', 'tag-fail');
+
+            if (!hasContent) {
+                html = `
+                    <div class="empty-state">
+                        <div class="emoji">📋</div>
+                        <p>请在左侧选择标的状态</p>
+                    </div>
+                `;
+            }
+
+            // 更新DOM
+            cardBody.innerHTML = html;
+            cardStats.innerHTML = `
+                <span class="pass-count">✅ ${data.pass.length}</span>
+                <span class="watch-count">⭐ ${data.watch.length}</span>
+                <span class="fail-count">❌ ${data.fail.length}</span>
+            `;
+
+            return hasContent;
+        }
+
+        // 生成图片
+        function generateImage() {
+            const hasContent = updatePreview(); // 确保渲染的是最新状态
+            
+            if (!hasContent) {
+                showNotification('⚠️ 请至少选择一个标的的状态！', 'warning');
+                return;
+            }
+
+            const card = document.getElementById('captureCard');
+            const btn = document.querySelector('.btn-primary');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ 正在生成...';
+            btn.style.opacity = '0.8';
+            
+            // 使用 html2canvas 生成图片
+            html2canvas(card, {
+                scale: 3, // 提高清晰度
+                backgroundColor: null,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                const now = new Date();
+                const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+                link.download = `ETF复盘卡片_${dateStr}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                showNotification('🎉 卡片已生成并开始下载！', 'success');
+            }).catch(err => {
+                console.error('生成图片失败:', err);
+                showNotification('❌ 生成图片失败，请重试', 'error');
+            }).finally(() => {
+                btn.innerHTML = originalText;
+                btn.style.opacity = '1';
+            });
+        }
+
+        // 重置
+        function resetAll() {
+            document.querySelectorAll('#tableBody select').forEach(select => {
+                select.value = '';
+                select.className = '';
+            });
+            updatePreview();
+            showNotification('🔄 内容已重置', 'success');
+        }
+
+        // 现代化的全局通知组件
+        function showNotification(message, type = 'success') {
+            const colors = {
+                success: 'linear-gradient(135deg, #2b5876 0%, #4e4376 100%)',
+                warning: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+                error: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'
+            };
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${colors[type]};
+                color: white;
+                padding: 14px 28px;
+                border-radius: 50px;
+                font-size: 15px;
+                font-weight: 600;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+                z-index: 10000;
+                animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease forwards';
+                setTimeout(() => notification.remove(), 300);
+            }, 2500);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateX(-50%) translateY(0); opacity: 1; }
+                to { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 初始化页面
+        initTable();
+    </script>
+</body>
+</html>
