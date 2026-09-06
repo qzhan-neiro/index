@@ -3,15 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETF 筛选卡片生成器</title>
+    <title>ETF 智能筛选引擎 - Light Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            --primary-color: #667eea;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --bg-color: #f0f2f5;
+            /* 纯净白科技主题色系 */
+            --bg-body: #f4f7fe;
+            --panel-bg: rgba(255, 255, 255, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            
+            /* 强调色（全息渐变蓝紫） */
+            --primary-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --text-gradient: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);
+            
+            /* 状态色（高明度纯净色） */
+            --color-pass: #059669;
+            --bg-pass: #ecfdf5;
+            --color-watch: #d97706;
+            --bg-watch: #fffbeb;
+            --color-fail: #e11d48;
+            --bg-fail: #fff1f2;
+            
+            --text-main: #1e293b;
+            --text-muted: #64748b;
         }
 
         * {
@@ -21,10 +35,16 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-            background: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-body);
+            /* 高级质感：浅色点阵背景 + 弥散光影 */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(79, 172, 254, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 242, 254, 0.08), transparent 25%),
+                radial-gradient(circle, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 24px 24px;
+            color: var(--text-main);
             padding: 30px 20px;
-            color: #333;
             min-height: 100vh;
         }
 
@@ -33,13 +53,17 @@
             margin: 0 auto;
         }
 
+        /* 渐变标题 */
         h1 {
             text-align: center;
-            color: #1a1a2e;
-            margin-bottom: 40px;
-            font-size: 32px;
+            font-size: 38px;
             font-weight: 800;
             letter-spacing: 1px;
+            margin-bottom: 40px;
+            background: var(--text-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 15px rgba(78, 67, 118, 0.1);
         }
 
         .main-content {
@@ -49,146 +73,155 @@
             flex-wrap: wrap;
         }
 
+        /* 毛玻璃面板 */
+        .glass-panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--panel-border);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.03),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
         /* 左侧表格区域 */
         .table-section {
             flex: 1;
             min-width: 500px;
-            background: #fff;
-            border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
         }
 
         .table-section h2 {
             font-size: 20px;
-            margin-bottom: 20px;
-            color: #16213e;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f2f5;
+            color: var(--text-main);
+            margin-bottom: 25px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 15px;
         }
 
-        /* 优化表格滚动体验 */
+        .table-section h2 .subtitle {
+            font-size: 14px;
+            color: #4facfe;
+            background: rgba(79, 172, 254, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
         .table-wrapper {
-            max-height: 60vh;
+            max-height: 55vh;
             overflow-y: auto;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #f0f2f5;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.8);
         }
 
-        /* 自定义滚动条 */
-        .table-wrapper::-webkit-scrollbar {
-            width: 8px;
+        /* 隐藏传统滚动条，采用悬浮设计 */
+        .table-wrapper::-webkit-scrollbar { width: 6px; }
+        .table-wrapper::-webkit-scrollbar-track { background: transparent; }
+        .table-wrapper::-webkit-scrollbar-thumb { 
+            background: rgba(148, 163, 184, 0.3); 
+            border-radius: 10px; 
         }
-        .table-wrapper::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        .table-wrapper::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-        .table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
+        .table-wrapper::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
 
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
         th, td {
-            padding: 16px;
+            padding: 16px 20px;
             text-align: left;
-            border-bottom: 1px solid #f0f2f5;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
         }
 
         th {
-            background: #fafbfc;
-            font-weight: 600;
-            color: #555;
+            background: rgba(248, 250, 252, 0.9);
             font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
             position: sticky;
             top: 0;
             z-index: 10;
-            box-shadow: 0 1px 0 #f0f2f5;
+            backdrop-filter: blur(10px);
         }
 
-        tr:last-child td {
-            border-bottom: none;
+        tr {
+            transition: all 0.2s ease;
         }
 
-        tr:hover td {
-            background: #f8fafc;
+        tr:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.01);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
         }
 
         .code {
             font-family: "SF Mono", "Fira Code", monospace;
-            color: var(--primary-color);
+            color: #3b82f6;
             font-weight: 600;
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(59, 130, 246, 0.1);
             padding: 4px 8px;
             border-radius: 6px;
         }
 
+        /* 高级感下拉框 */
         select {
-            width: 140px;
+            width: 150px;
             padding: 10px 14px;
-            border: 2px solid #e2e8f0;
+            background-color: #fff;
+            border: 2px solid transparent;
             border-radius: 10px;
+            color: var(--text-main);
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat calc(100% - 12px) center;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
             appearance: none;
-            padding-right: 30px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 12px) center;
+        }
+
+        select:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
         select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
         }
 
-        select.status-pass {
-            border-color: var(--success-color);
-            background-color: #e8f8f0;
-            color: var(--success-color);
-        }
+        /* 状态样式 */
+        select.status-pass { background-color: var(--bg-pass); color: var(--color-pass); border-color: #a7f3d0;}
+        select.status-watch { background-color: var(--bg-watch); color: var(--color-watch); border-color: #fde68a;}
+        select.status-fail { background-color: var(--bg-fail); color: var(--color-fail); border-color: #fecdd3;}
 
-        select.status-fail {
-            border-color: var(--danger-color);
-            background-color: #fdf0ef;
-            color: var(--danger-color);
-        }
-
-        select.status-watch {
-            border-color: var(--warning-color);
-            background-color: #fef9e7;
-            color: var(--warning-color);
-        }
-
-        /* 按钮 */
+        /* 炫酷按钮群组 */
         .btn-group {
             display: flex;
             gap: 16px;
-            margin-top: auto;
+            margin-top: 30px;
         }
 
         .btn {
-            padding: 14px 28px;
+            padding: 16px 28px;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -197,60 +230,57 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            background: var(--primary-gradient);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(0, 242, 254, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
         }
 
-        .btn-primary:active {
-            transform: translateY(0);
-        }
+        .btn-primary:hover::after { left: 100%; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(0, 242, 254, 0.4); }
+        .btn-primary:active { transform: translateY(0); }
 
         .btn-secondary {
-            background: #f1f5f9;
-            color: #475569;
-            flex: 0 0 auto;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-main);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
-        .btn-secondary:hover {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
+        .btn-secondary:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
 
-        /* 右侧卡片预览区域 - 悬浮固定 */
+        /* 右侧卡片预览 (悬浮) */
         .preview-section {
-            width: 420px;
-            flex-shrink: 0;
+            width: 440px;
             position: sticky;
             top: 30px;
         }
 
-        .preview-section h2 {
-            font-size: 20px;
-            margin-bottom: 20px;
-            color: #16213e;
-            text-align: center;
-        }
-
-        /* 卡片样式 */
+        /* ====== 用于截图的高精度卡片样式 ====== */
+        /* 白底干净清晰，适合导出成图片 */
         .card {
             width: 100%;
-            background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+            background: #ffffff;
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-            border: 1px solid rgba(255,255,255,1);
-            transition: all 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            position: relative;
         }
 
+        /* 卡片顶栏 - 柔和渐变 */
         .card-header {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
             padding: 30px;
             position: relative;
             overflow: hidden;
@@ -259,58 +289,55 @@
         .card-header::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+            top: 0; right: 0;
+            width: 150px; height: 150px;
+            background: var(--primary-gradient);
+            filter: blur(60px);
+            opacity: 0.15;
+            border-radius: 50%;
+            transform: translate(30%, -30%);
         }
 
         .card-header h3 {
             font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            position: relative;
-            letter-spacing: 0.5px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
         }
 
         .card-header .date {
             font-size: 14px;
-            opacity: 0.8;
-            position: relative;
-            font-weight: 300;
+            color: var(--text-muted);
+            font-weight: 500;
         }
 
         .card-header .badge {
             position: absolute;
-            top: 25px;
-            right: 25px;
-            background: rgba(255,255,255,0.15);
-            padding: 6px 16px;
+            top: 30px;
+            right: 30px;
+            background: var(--primary-gradient);
+            color: #fff;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0, 242, 254, 0.3);
         }
 
         .card-body {
             padding: 30px;
-            min-height: 200px;
+            min-height: 300px;
         }
 
         .section {
-            margin-bottom: 24px;
-            animation: fadeIn 0.4s ease-out;
+            margin-bottom: 25px;
+            animation: slideIn 0.4s ease-out;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        .section:last-child {
-            margin-bottom: 0;
         }
 
         .section-title {
@@ -319,159 +346,139 @@
             gap: 12px;
             margin-bottom: 16px;
             font-size: 16px;
-            font-weight: 700;
-            color: #2c3e50;
+            font-weight: 800;
         }
 
         .section-title .icon {
-            width: 32px;
-            height: 32px;
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             font-size: 16px;
         }
 
-        .section-title.pass .icon { background: #e8f8f0; }
-        .section-title.watch .icon { background: #fef9e7; }
-        .section-title.fail .icon { background: #fdf0ef; }
+        .section-title.pass .icon { background: var(--bg-pass); }
+        .section-title.watch .icon { background: var(--bg-watch); }
+        .section-title.fail .icon { background: var(--bg-fail); }
 
         .tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
         }
 
+        /* 标签设计：拟态风格 */
         .tag {
-            padding: 8px 16px;
-            border-radius: 10px;
+            padding: 10px 16px;
+            border-radius: 12px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
-        .tag-pass {
-            background: #f0fdf4;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
+        .tag-pass { background: #fff; color: var(--color-pass); }
+        .tag-watch { background: #fff; color: var(--color-watch); }
+        .tag-fail { background: #fff; color: var(--color-fail); opacity: 0.8;}
 
-        .tag-watch {
-            background: #fffbeb;
-            color: #92400e;
-            border: 1px solid #fde68a;
-        }
-
-        .tag-fail {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
+        .tag-pass::before { content:''; display:block; width:8px; height:8px; border-radius:50%; background:var(--color-pass); box-shadow:0 0 8px var(--color-pass);}
+        .tag-watch::before { content:''; display:block; width:8px; height:8px; border-radius:50%; background:var(--color-watch); box-shadow:0 0 8px var(--color-watch);}
+        .tag-fail::before { content:''; display:block; width:8px; height:8px; border-radius:50%; background:var(--color-fail); }
 
         .tag .code {
             font-size: 12px;
-            opacity: 0.8;
-            font-family: "SF Mono", monospace;
-            background: transparent;
-            padding: 0;
-            color: inherit;
+            color: var(--text-muted);
+            background: rgba(241, 245, 249, 0.8);
+            padding: 3px 8px;
+            border-radius: 6px;
         }
 
+        /* 卡片底部 */
         .card-footer {
             padding: 24px 30px;
             background: #f8fafc;
-            border-top: 1px dashed #cbd5e1;
+            border-top: 1px dashed #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .card-footer .stats {
-            font-size: 14px;
             display: flex;
             gap: 16px;
+            font-size: 14px;
+            font-weight: 700;
         }
 
-        .card-footer .stats .pass-count { color: var(--success-color); font-weight: 700; }
-        .card-footer .stats .watch-count { color: var(--warning-color); font-weight: 700; }
-        .card-footer .stats .fail-count { color: var(--danger-color); font-weight: 700; }
+        .card-footer .stats .pass-count { color: var(--color-pass); }
+        .card-footer .stats .watch-count { color: var(--color-watch); }
+        .card-footer .stats .fail-count { color: var(--color-fail); }
 
         .card-footer .logo {
             font-size: 13px;
             color: #94a3b8;
-            font-weight: 600;
+            font-weight: 800;
             letter-spacing: 0.5px;
         }
 
+        /* 空状态 */
         .empty-state {
             text-align: center;
-            padding: 50px 20px;
+            padding: 60px 20px;
             color: #94a3b8;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100%;
+        }
+        .empty-state .icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+            animation: float 3s ease-in-out infinite;
         }
 
-        .empty-state .emoji {
-            font-size: 56px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
 
-        .download-hint {
+        .hint {
             text-align: center;
             margin-top: 20px;
-            font-size: 14px;
             color: #64748b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
         }
 
         /* 响应式 */
         @media (max-width: 1024px) {
-            .main-content {
-                flex-direction: column;
-            }
-            .table-section {
-                min-width: auto;
-                width: 100%;
-            }
-            .preview-section {
-                width: 100%;
-                max-width: 500px;
-                margin: 0 auto;
-                position: relative; /* 移动端取消悬浮 */
-                top: 0;
-            }
+            .main-content { flex-direction: column; }
+            .table-section { min-width: auto; width: 100%; }
+            .preview-section { width: 100%; max-width: 500px; margin: 0 auto; position: relative; top: 0; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 ETF 筛选卡片生成器</h1>
+        <h1>ETF 智能战术面板</h1>
         
         <div class="main-content">
-            <!-- 左侧：选择表格 -->
-            <div class="table-section">
+            <!-- 左侧：控制台 -->
+            <div class="table-section glass-panel">
                 <h2>
-                    <span>① 选择标的状态</span>
-                    <span style="font-size: 14px; color: #94a3b8; font-weight: normal;">实时联动预览</span>
+                    <span>标的矩阵配置</span>
+                    <span class="subtitle">实时渲染引擎激活</span>
                 </h2>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>代码</th>
-                                <th>名称</th>
-                                <th>决策状态</th>
+                                <th>标的名称</th>
+                                <th>战术决策</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
@@ -480,43 +487,44 @@
                 
                 <div class="btn-group">
                     <button class="btn btn-secondary" onclick="resetAll()">
-                        🔄 重置内容
+                        ↺ 格式化面板
                     </button>
                     <button class="btn btn-primary" onclick="generateImage()">
-                        📸 导出图片卡片
+                        📸 高清导出图谱
                     </button>
                 </div>
             </div>
 
-            <!-- 右侧：卡片预览 -->
+            <!-- 右侧：生成预览 -->
             <div class="preview-section">
-                <h2>② 卡片实时预览</h2>
-                <div id="cardContainer">
-                    <div class="card" id="captureCard">
-                        <div class="card-header">
-                            <h3>我的 ETF 观察清单</h3>
-                            <p class="date" id="cardDate"></p>
-                            <span class="badge">每日复盘</span>
-                        </div>
-                        <div class="card-body" id="cardBody">
-                            <div class="empty-state">
-                                <div class="emoji">📋</div>
-                                <p>请在左侧选择标的状态</p>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <div class="stats" id="cardStats">
-                                <span class="pass-count">✅ 0</span>
-                                <span class="watch-count">⭐ 0</span>
-                                <span class="fail-count">❌ 0</span>
-                            </div>
-                            <div class="logo">ETF Tracker Pro</div>
+                <div class="card" id="captureCard">
+                    <div class="card-header">
+                        <h3>我的 ETF 观察序列</h3>
+                        <p class="date" id="cardDate"></p>
+                        <span class="badge">PRO VIEW</span>
+                    </div>
+                    <div class="card-body" id="cardBody">
+                        <div class="empty-state">
+                            <div class="icon">✨</div>
+                            <p>在左侧选择策略，右侧即刻呈现</p>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <div class="stats" id="cardStats">
+                            <span class="pass-count">✓ 0</span>
+                            <span class="watch-count">✦ 0</span>
+                            <span class="fail-count">✕ 0</span>
+                        </div>
+                        <div class="logo">ETF TRACKER PRO</div>
+                    </div>
                 </div>
-                <p class="download-hint">💡 图片生成后将自动保存到本地</p>
+                <p class="hint">💡 导出的图片为 Retina 高清级画质</p>
             </div>
         </div>
+    </div>
+
+    <!-- 弹窗组件 -->
+    <div id="toast" style="display:none; position:fixed; top:40px; left:50%; transform:translateX(-50%); background:#fff; color:#1e293b; padding:16px 32px; border-radius:50px; z-index:9999; box-shadow:0 10px 30px rgba(0,0,0,0.1); font-weight:700; border:1px solid #f1f5f9; display:flex; align-items:center; gap:10px; transition: all 0.3s ease; opacity: 0; visibility: hidden;">
     </div>
 
     <script>
@@ -543,10 +551,13 @@
             { code: '512400', name: '有色金属' }
         ];
 
-        // 设置当前日期
-        document.getElementById('cardDate').textContent = new Date().toLocaleDateString('zh-CN', {
-            year: 'numeric', month: 'long', day: 'numeric'
-        });
+        // 格式化日期：YYYY年MM月DD日 星期X
+        function getFormattedDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            return now.toLocaleDateString('zh-CN', options);
+        }
+        document.getElementById('cardDate').textContent = getFormattedDate();
 
         // 初始化表格
         function initTable() {
@@ -554,59 +565,44 @@
             tbody.innerHTML = etfData.map(item => `
                 <tr>
                     <td><span class="code">${item.code}</span></td>
-                    <td style="font-weight: 500;">${item.name}</td>
+                    <td style="font-weight: 600;">${item.name}</td>
                     <td>
                         <select onchange="handleSelectChange(this)" data-code="${item.code}" data-name="${item.name}">
-                            <option value="">-- 请选择 --</option>
-                            <option value="pass">✅ 坚决通过</option>
-                            <option value="watch">⭐ 重点关注</option>
-                            <option value="fail">❌ 不予通过</option>
+                            <option value="">- 请评估 -</option>
+                            <option value="pass">✓ 坚决执行</option>
+                            <option value="watch">✦ 重点观察</option>
+                            <option value="fail">✕ 暂不考虑</option>
                         </select>
                     </td>
                 </tr>
             `).join('');
         }
 
-        // 处理下拉框改变事件 (新增实时预览联动)
+        // 处理下拉联动
         function handleSelectChange(select) {
-            // 更新自身样式
             select.className = '';
             if (select.value === 'pass') select.className = 'status-pass';
             else if (select.value === 'fail') select.className = 'status-fail';
             else if (select.value === 'watch') select.className = 'status-watch';
             
-            // 触发预览更新
             updatePreview();
         }
 
-        // 收集数据
-        function collectData() {
+        // 更新预览区域
+        function updatePreview() {
             const selects = document.querySelectorAll('#tableBody select');
             const data = { pass: [], watch: [], fail: [] };
             
-            selects.forEach(select => {
-                const value = select.value;
-                if (value) {
-                    data[value].push({
-                        code: select.dataset.code,
-                        name: select.dataset.name
-                    });
-                }
+            selects.forEach(s => {
+                if (s.value) data[s.value].push({ code: s.dataset.code, name: s.dataset.name });
             });
             
-            return data;
-        }
-
-        // 更新预览区域 (从原来的 renderCard 拆分)
-        function updatePreview() {
-            const data = collectData();
             const cardBody = document.getElementById('cardBody');
             const cardStats = document.getElementById('cardStats');
             
             let html = '';
             let hasContent = false;
 
-            // 渲染数据块的辅助函数
             const renderSection = (items, type, icon, title, tagClass) => {
                 if (items.length === 0) return '';
                 hasContent = true;
@@ -628,66 +624,87 @@
                 `;
             };
 
-            html += renderSection(data.pass, 'pass', '✅', '坚决通过', 'tag-pass');
-            html += renderSection(data.watch, 'watch', '⭐', '重点关注', 'tag-watch');
-            html += renderSection(data.fail, 'fail', '❌', '不予通过', 'tag-fail');
+            html += renderSection(data.pass, 'pass', '✓', '坚决执行序列', 'tag-pass');
+            html += renderSection(data.watch, 'watch', '✦', '重点观察序列', 'tag-watch');
+            html += renderSection(data.fail, 'fail', '✕', '暂不考虑序列', 'tag-fail');
 
             if (!hasContent) {
                 html = `
                     <div class="empty-state">
-                        <div class="emoji">📋</div>
-                        <p>请在左侧选择标的状态</p>
+                        <div class="icon">✨</div>
+                        <p>在左侧选择策略，右侧即刻呈现</p>
                     </div>
                 `;
             }
 
-            // 更新DOM
             cardBody.innerHTML = html;
+            
+            // 更新底部统计
             cardStats.innerHTML = `
-                <span class="pass-count">✅ ${data.pass.length}</span>
-                <span class="watch-count">⭐ ${data.watch.length}</span>
-                <span class="fail-count">❌ ${data.fail.length}</span>
+                <span class="pass-count">✓ ${data.pass.length}</span>
+                <span class="watch-count">✦ ${data.watch.length}</span>
+                <span class="fail-count">✕ ${data.fail.length}</span>
             `;
 
             return hasContent;
         }
 
-        // 生成图片
-        function generateImage() {
-            const hasContent = updatePreview(); // 确保渲染的是最新状态
+        // 苹果风优雅提示
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = type === 'error' ? `<span>⚠️</span> ${msg}` : `<span>✅</span> ${msg}`;
             
+            toast.style.visibility = 'visible';
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+
+            setTimeout(() => { 
+                toast.style.opacity = '0'; 
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => toast.style.visibility = 'hidden', 300);
+            }, 2500);
+        }
+
+        // 高清截图导出
+        function generateImage() {
+            const hasContent = updatePreview();
             if (!hasContent) {
-                showNotification('⚠️ 请至少选择一个标的的状态！', 'warning');
+                showToast('请至少配置一个标的再生成', 'error');
                 return;
             }
 
             const card = document.getElementById('captureCard');
             const btn = document.querySelector('.btn-primary');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ 正在生成...';
-            btn.style.opacity = '0.8';
             
-            // 使用 html2canvas 生成图片
+            btn.innerHTML = '✨ 渲染生成中...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+            
             html2canvas(card, {
-                scale: 3, // 提高清晰度
-                backgroundColor: null,
+                scale: 3, // Retina 3倍图，非常高清
+                backgroundColor: '#ffffff',
                 useCORS: true,
-                logging: false
+                logging: false,
+                windowWidth: card.scrollWidth,
+                windowHeight: card.scrollHeight
             }).then(canvas => {
                 const link = document.createElement('a');
                 const now = new Date();
-                const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-                link.download = `ETF复盘卡片_${dateStr}.png`;
+                const d = String(now.getDate()).padStart(2, '0');
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                link.download = `ETF_策略图谱_${m}月${d}日.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
                 
-                showNotification('🎉 卡片已生成并开始下载！', 'success');
+                showToast('图谱生成成功，已开始下载');
             }).catch(err => {
-                console.error('生成图片失败:', err);
-                showNotification('❌ 生成图片失败，请重试', 'error');
+                console.error(err);
+                showToast('生成失败，请检查网络或重试', 'error');
             }).finally(() => {
                 btn.innerHTML = originalText;
                 btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
             });
         }
 
@@ -698,56 +715,10 @@
                 select.className = '';
             });
             updatePreview();
-            showNotification('🔄 内容已重置', 'success');
+            showToast('面板已重置为初始状态');
         }
 
-        // 现代化的全局通知组件
-        function showNotification(message, type = 'success') {
-            const colors = {
-                success: 'linear-gradient(135deg, #2b5876 0%, #4e4376 100%)',
-                warning: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-                error: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'
-            };
-            
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 30px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${colors[type]};
-                color: white;
-                padding: 14px 28px;
-                border-radius: 50px;
-                font-size: 15px;
-                font-weight: 600;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-                z-index: 10000;
-                animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            `;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideUp 0.3s ease forwards';
-                setTimeout(() => notification.remove(), 300);
-            }, 2500);
-        }
-
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideDown {
-                from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
-                to { transform: translateX(-50%) translateY(0); opacity: 1; }
-            }
-            @keyframes slideUp {
-                from { transform: translateX(-50%) translateY(0); opacity: 1; }
-                to { transform: translateX(-50%) translateY(-100px); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // 初始化页面
+        // 初始化
         initTable();
     </script>
 </body>
