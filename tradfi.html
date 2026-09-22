@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>199个标的按分类汇总表</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary-color: #2563eb;
+            --hover-bg: #f1f5f9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 24px 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.875rem;
+            margin: 0 0 8px 0;
+            color: #1e293b;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .category-nav {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .cat-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cat-btn.active, .cat-btn:hover {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border-color: var(--primary-color);
+        }
+
+        .controls {
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .stats {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .table-wrapper {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #334155;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .symbol-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 600;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+
+        .name-cn {
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .desc {
+            color: #334155;
+            min-width: 260px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>199个标的分分类整理表</h1>
+        <p>按行业属性及资产类别分类，支持按类别筛选与关键词搜索</p>
+    </div>
+
+    <!-- 快捷分类筛选按钮 -->
+    <div class="category-nav" id="categoryNav">
+        <button class="cat-btn active" onclick="selectCategory('ALL')">全部 (199)</button>
+        <button class="cat-btn" onclick="selectCategory('半导体与芯片硬件')">半导体与芯片硬件</button>
+        <button class="cat-btn" onclick="selectCategory('AI、云计算与软件服务')">AI、云计算与软件服务</button>
+        <button class="cat-btn" onclick="selectCategory('互联网巨头与科技消费')">互联网巨头与科技消费</button>
+        <button class="cat-btn" onclick="selectCategory('加密货币与算力基础设施')">加密货币与算力基础设施</button>
+        <button class="cat-btn" onclick="selectCategory('ETF指数与杠杆基金')">ETF指数与杠杆基金</button>
+        <button class="cat-btn" onclick="selectCategory('中国/香港上市科技股')">中国/港股科技</button>
+        <button class="cat-btn" onclick="selectCategory('韩国上市科技及关联标的')">韩国科技</button>
+        <button class="cat-btn" onclick="selectCategory('传统工业、汽车与消费')">工业与传统消费</button>
+        <button class="cat-btn" onclick="selectCategory('大宗商品与贵金属')">大宗商品与贵金属</button>
+        <button class="cat-btn" onclick="selectCategory('医药、生物科技与医疗')">医药与医疗</button>
+        <button class="cat-btn" onclick="selectCategory('其他概念与衍生品')">其他概念</button>
+    </div>
+
+    <div class="controls">
+        <div class="search-box">
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="搜索代码、中文名称、类别或描述...">
+        </div>
+        <div class="stats" id="statsCount">显示 199 / 199 个项目</div>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="symbolsTable">
+            <thead>
+                <tr>
+                    <th style="width: 6%;">序号</th>
+                    <th style="width: 15%;">交易代码</th>
+                    <th style="width: 18%;">中文名称</th>
+                    <th style="width: 18%;">分类</th>
+                    <th>简介 / 对应标的说明</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- 由 JavaScript 动态填充 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const data = [
+  // 1. 半导体与芯片硬件
+  { s: "AAOIUSDT", n: "应用光电", c: "半导体与芯片硬件", d: "Applied Optoelectronics，美股光纤与光电通信模块制造商。" },
+  { s: "ALABUSDT", n: "Astera Labs", c: "半导体与芯片硬件", d: "美股专为 AI 和云基础设施提供高速连接芯片的公司。" },
+  { s: "AMATUSDT", n: "应用材料", c: "半导体与芯片硬件", d: "Applied Materials，全球最大的半导体制造设备巨头之一。" },
+  { s: "AMDUSDT", n: "超威半导体", c: "半导体与芯片硬件", d: "Advanced Micro Devices，全球 CPU 与 GPU 设计大厂。" },
+  { s: "ARMUSDT", n: "安谋科技", c: "半导体与芯片硬件", d: "Arm Holdings，全球领军的芯片架构设计与 IP 授权公司。" },
+  { s: "ASMLUSDT", n: "阿斯麦", c: "半导体与芯片硬件", d: "ASML Holding，全球光刻机（EUV/DUV）独霸巨头。" },
+  { s: "AVGOUSDT", n: "博通", c: "半导体与芯片硬件", d: "Broadcom Inc.，全球半导体通信芯片与基础设施软件巨头。" },
+  { s: "AXTIUSDT", n: "AXT Inc", c: "半导体与芯片硬件", d: "通美晶体，高端半导体衬底材料（如磷化铟、砷化镓）制造商。" },
+  { s: "COHRUSDT", n: "相干公司", c: "半导体与芯片硬件", d: "Coherent Corp.，光学材料、激光器及光通信组件制造商。" },
+  { s: "CRDOUSDT", n: "Credo Technology", c: "半导体与芯片硬件", d: "美股高速连接半导体公司，专注于数据中心及 AI 网络。" },
+  { s: "DRAMUSDT", n: "DRAM 存储器概念", c: "半导体与芯片硬件", d: "追踪动态随机存取内存（DRAM）行业表现的概念标的。" },
+  { s: "GIGADEVUSDT", n: "兆易创新概念", c: "半导体与芯片硬件", d: "GigaDevice，专注于 NOR Flash 存储芯片及 MCU 的标的。" },
+  { s: "GLWUSDT", n: "康宁公司", c: "半导体与芯片硬件", d: "Corning Incorporated，特殊玻璃（大猩猩玻璃）与光纤材料巨头。" },
+  { s: "INTCUSDT", n: "英特尔", c: "半导体与芯片硬件", d: "Intel Corporation，全球传统 PC、服务器芯片及制造巨头。" },
+  { s: "KLACUSDT", n: "科磊", c: "半导体与芯片硬件", d: "KLA Corporation，全球半导体工艺检测与质量控制设备龙头。" },
+  { s: "LITEUSDT", n: "Lumentum", c: "半导体与芯片硬件", d: "全球领先的激光器、光通信器件及 3D 感测技术供应商。" },
+  { s: "LRCXUSDT", n: "泛林集团", c: "半导体与芯片硬件", d: "Lam Research，半导体刻蚀与薄膜沉积设备供应商。" },
+  { s: "MRVLUSDT", n: "迈威尔科技", c: "半导体与芯片硬件", d: "Marvell Technology，数据基础设施及 AI 网络定制芯片领导者。" },
+  { s: "MUUSDT", n: "美光科技", c: "半导体与芯片硬件", d: "Micron Technology，全球顶级存储芯片（DRAM/NAND/HBM）供应商。" },
+  { s: "MUUUSDT", n: "Muu / 美光派生标的", c: "半导体与芯片硬件", d: "美光概念关联代币或杠杆衍生产品。" },
+  { s: "MVLLUSDT", n: "Marvell 派生标的", c: "半导体与芯片硬件", d: "针对迈威尔科技 (MRVL) 的衍生杠杆或派生标的。" },
+  { s: "NVDAUSDT", n: "英伟达", c: "半导体与芯片硬件", d: "NVIDIA Corporation，全球 GPU、AI 算力芯片及生态统治级巨头。" },
+  { s: "QCOMUSDT", n: "高通", c: "半导体与芯片硬件", d: "Qualcomm，无线通信技术与骁龙移动芯片巨头。" },
+  { s: "RAMUSDT", n: "RAM 存储芯片概念", c: "半导体与芯片硬件", d: "内存/存储芯片产业概念标的。" },
+  { s: "SKDDUSDT", n: "SK海力士派生标的", c: "半导体与芯片硬件", d: "与 SK 海力士芯片产业链相关的衍生金融标的。" },
+  { s: "SKHYNIXUSDT", n: "SK海力士", c: "半导体与芯片硬件", d: "SK Hynix，韩国半导体巨头，全球顶级 HBM 存储芯片核心供应商。" },
+  { s: "SKHYUSDT", n: "SK海力士 (简写)", c: "半导体与芯片硬件", d: "SK 海力士交易对简写衍生标的。" },
+  { s: "SMCIUSDT", n: "超威电脑", c: "半导体与芯片硬件", d: "Super Micro Computer，高性能服务器与 AI 服务器硬件供应商。" },
+  { s: "SNDKUSDT", n: "闪迪", c: "半导体与芯片硬件", d: "SanDisk，知名闪存与存储设备概念标的。" },
+  { s: "TERUSDT", n: "泰瑞达", c: "半导体与芯片硬件", d: "Teradyne, Inc.，自动化测试设备（ATE）及工业机器人领导者。" },
+  { s: "TSMUSDT", n: "台积电", c: "半导体与芯片硬件", d: "TSMC，全球最大的专业半导体晶圆代工龙头。" },
+  { s: "TXNUSDT", n: "德州仪器", c: "半导体与芯片硬件", d: "Texas Instruments，全球模拟芯片与嵌入式处理器制造龙头。" },
+  { s: "WDCUSDT", n: "西部数据", c: "半导体与芯片硬件", d: "Western Digital，机械硬盘 (HDD) 与闪存 (Flash) 制造巨头。" },
+
+  // 2. AI、云计算与软件服务
+  { s: "ADBEUSDT", n: "奥多比", c: "AI、云计算与软件服务", d: "Adobe Inc.，创意软件 (Photoshop) 及数字体验提供商。" },
+  { s: "AGPUUSDT", n: "Applied GPU / AGPU", c: "AI、云计算与软件服务", d: "与 GPU 算力及 AI 硬件基础设施相关的代币标的。" },
+  { s: "ANETUSDT", n: "Arista网络", c: "AI、云计算与软件服务", d: "Arista Networks，云网络解决方案及数据中心交换机提供商。" },
+  { s: "ANTHROPICUSDT", n: "Anthropic", c: "AI、云计算与软件服务", d: "知名 AI 独角兽（Claude 大模型开发者）股权概念衍生品。" },
+  { s: "APLDUSDT", n: "Applied Digital", c: "AI、云计算与软件服务", d: "高效能计算（HPC）及 AI 算力数据中心基础设施运营商。" },
+  { s: "APPUSDT", n: "AppLovin", c: "AI、云计算与软件服务", d: "美国移动应用营销与 AI 驱动的广告科技平台公司。" },
+  { s: "CRMUSDT", n: "赛富时", c: "AI、云计算与软件服务", d: "Salesforce，全球最大的客户关系管理 (CRM) 软件巨头。" },
+  { s: "CRWDUSDT", n: "CrowdStrike", c: "AI、云计算与软件服务", d: "云端网络安全与终点防护软件领军企业。" },
+  { s: "CRWVUSDT", n: "CoreWeave", c: "AI、云计算与软件服务", d: "AI 算力云服务及 GPU 托管独角兽概念标的。" },
+  { s: "CSCOUSDT", n: "思科", c: "AI、云计算与软件服务", d: "Cisco Systems，网络硬件、电信设备及网络安全巨头。" },
+  { s: "DDOGUSDT", n: "Datadog", c: "AI、云计算与软件服务", d: "云端基础设施监控与可观测性分析 SaaS 服务商。" },
+  { s: "DELLUSDT", n: "戴尔科技", c: "AI、云计算与软件服务", d: "Dell Technologies，服务器及 AI 数据中心基础设施供应商。" },
+  { s: "GTLBUSDT", n: "GitLab", c: "AI、云计算与软件服务", d: "开源 DevSecOps 平台与代码托管服务商。" },
+  { s: "HPEUSDT", n: "惠普企业", c: "AI、云计算与软件服务", d: "Hewlett Packard Enterprise，企业级 IT、服务器及边缘计算。" },
+  { s: "IBMUSDT", n: "国际商业机器", c: "AI、云计算与软件服务", d: "IBM，百年 IT 巨头，专注于混合云与企业级 AI (Watson)。" },
+  { s: "IONQUSDT", n: "IonQ", c: "AI、云计算与软件服务", d: "量子计算头部上市公司，专注于离子阱量子计算技术。" },
+  { s: "MDBUSDT", n: "MongoDB", c: "AI、云计算与软件服务", d: "现代通用非关系型数据库 (NoSQL) 平台服务商。" },
+  { s: "MINIMAXUSDT", n: "MiniMax", c: "AI、云计算与软件服务", d: "中国头部通用大模型 AI 独角兽公司概念标的。" },
+  { s: "MSFTUSDT", n: "微软", c: "AI、云计算与软件服务", d: "Microsoft，云计算 (Azure) 及 OpenAI 核心投资合作伙伴。" },
+  { s: "NBISUSDT", n: "Nebius Group", c: "AI、云计算与软件服务", d: "专注于 AI 基础设施及云算力的科技服务公司。" },
+  { s: "NETUSDT", n: "Cloudflare", c: "AI、云计算与软件服务", d: "边缘计算、网络安全及 CDN 内容分发网络龙头。" },
+  { s: "NOWUSDT", n: "ServiceNow", c: "AI、云计算与软件服务", d: "企业级工作流程自动化与 IT 服务管理 (ITSM) 软件巨头。" },
+  { s: "OPENAIUSDT", n: "OpenAI", c: "AI、云计算与软件服务", d: "全球 AI 革命领军者（ChatGPT 开发者）股权概念衍生品。" },
+  { s: "ORCLUSDT", n: "甲骨文", c: "AI、云计算与软件服务", d: "Oracle Corporation，数据库管理系统及 AI 云基础设施巨头。" },
+  { s: "PANWUSDT", n: "帕洛阿尔托网络", c: "AI、云计算与软件服务", d: "Palo Alto Networks，全球网络安全软件及防火墙龙头。" },
+  { s: "PATHUSDT", n: "UiPath", c: "AI、云计算与软件服务", d: "机器人流程自动化 (RPA) 及 AI 业务自动化软件平台。" },
+  { s: "PLTRUSDT", n: "Palantir", c: "AI、云计算与软件服务", d: "大数据库分析、军工及企业级 AI 平台巨头。" },
+  { s: "SNOWUSDT", n: "Snowflake", c: "AI、云计算与软件服务", d: "云端数据仓库与数据分析平台 SaaS 龙头。" },
+  { s: "TEAMUSDT", n: "Atlassian", c: "AI、云计算与软件服务", d: "软件团队协作工具巨头，旗下有 Jira、Confluence。" },
+  { s: "TEMUSDT", n: "Tempus AI", c: "AI、云计算与软件服务", d: "利用 AI 推进精准医疗与基因诊断的医疗科技公司。" },
+  { s: "UNITREEUSDT", n: "宇树科技", c: "AI、云计算与软件服务", d: "中国四足机器人及人形机器人研发企业概念标的。" },
+  { s: "VRTUSDT", n: "维谛技术", c: "AI、云计算与软件服务", d: "Vertiv，数据中心电力与 AI 服务器液冷散热解决方案商。" },
+  { s: "ZHIPUUSDT", n: "智谱AI", c: "AI、云计算与软件服务", d: "中国清言大模型研发独角兽公司概念标的。" },
+  { s: "ZMUSDT", n: "Zoom", c: "AI、云计算与软件服务", d: "Zoom，云视频会议与远程协作软件提供商。" },
+  { s: "ZSUSDT", n: "Zscaler", c: "AI、云计算与软件服务", d: "云原生网络安全公司，开创了零信任 (Zero Trust) 架构。" },
+
+  // 3. 互联网巨头与科技消费
+  { s: "AAPLUSDT", n: "苹果公司", c: "互联网巨头与科技消费", d: "Apple Inc.，全球消费电子与软件巨头 (iPhone/Mac)。" },
+  { s: "AMZNUSDT", n: "亚马逊", c: "互联网巨头与科技消费", d: "Amazon.com，全球电商与云计算基础设施 (AWS) 巨头。" },
+  { s: "DISUSDT", n: "迪士尼", c: "互联网巨头与科技消费", d: "The Walt Disney Company，娱乐、主题乐园与流媒体巨头。" },
+  { s: "DKNGUSDT", n: "DraftKings", c: "互联网巨头与科技消费", d: "美国在线体育博彩与数字娱乐服务公司。" },
+  { s: "EBAYUSDT", n: "易贝", c: "互联网巨头与科技消费", d: "eBay Inc.，全球知名的在线 C2C/B2C 电商平台。" },
+  { s: "GOOGLUSDT", n: "谷歌 (Alphabet A)", c: "互联网巨头与科技消费", d: "Alphabet Inc.，搜索引擎、YouTube 与 AI 科技巨头。" },
+  { s: "GPROUSDT", n: "GoPro", c: "互联网巨头与科技消费", d: "GoPro, Inc.，便携式运动相机及配件品牌商。" },
+  { s: "HIMSUSDT", n: "Hims & Hers Health", c: "互联网巨头与科技消费", d: "个性化遥测医疗与消费级药品平台。" },
+  { s: "METAUSDT", n: "Meta", c: "互联网巨头与科技消费", d: "原 Facebook，社交网络 (Instagram/WhatsApp) 及 AI/元宇宙巨头。" },
+  { s: "NFLXUSDT", n: "网飞", c: "互联网巨头与科技消费", d: "Netflix, Inc.，全球流媒体娱乐与影视制作龙头。" },
+  { s: "NOKUSDT", n: "诺基亚", c: "互联网巨头与科技消费", d: "Nokia Corporation，电信基础设施与 5G 专利授权商。" },
+  { s: "PAYPUSDT", n: "PayPal", c: "互联网巨头与科技消费", d: "PayPal Holdings，数字支付与电子钱包服务商。" },
+  { s: "PYPLUSDT", n: "PayPal (映射)", c: "互联网巨头与科技消费", d: "PayPal 的股票交易代码映射。" },
+  { s: "RDDTUSDT", n: "Reddit", c: "互联网巨头与科技消费", d: "Reddit Inc.，美国互联网社区与美股散户论坛聚集地。" },
+  { s: "SHOPUSDT", n: "Shopify", c: "互联网巨头与科技消费", d: "Shopify Inc.，独立站电商建站与 SaaS 服务平台。" },
+  { s: "SONYUSDT", n: "索尼", c: "互联网巨头与科技消费", d: "Sony Group，娱乐、游戏 (PlayStation) 与图像传感器巨头。" },
+  { s: "TTWOUSDT", n: "Take-Two Interactive", c: "互联网巨头与科技消费", d: "知名游戏发行商，旗下有 Rockstar Games (GTA) 和 2K。" },
+  { s: "UBERUSDT", n: "优步", c: "互联网巨头与科技消费", d: "Uber Technologies，共享出行与外卖送餐平台。" },
+
+  // 4. 加密货币与算力基础设施
+  { s: "BITOUSDT", n: "ProShares 比特币 ETF", c: "加密货币与算力基础设施", d: "追踪比特币期货价格表现的合规 ETF (BITO)。" },
+  { s: "BMNRUSDT", n: "BitMine Immersion", c: "加密货币与算力基础设施", d: "数字货币挖矿及算力基础设施相关公司。" },
+  { s: "BNCUSDT", n: "Brave New Coin", c: "加密货币与算力基础设施", d: "区块链数据分析与加密资产指数提供商相关代币。" },
+  { s: "COINUSDT", n: "Coinbase", c: "加密货币与算力基础设施", d: "Coinbase Global，美股上市合规加密货币交易所巨头。" },
+  { s: "CRCLUSDT", n: "Circle / CRCL", c: "加密货币与算力基础设施", d: "稳定币 USDC 发行方 Circle 的股权概念衍生品。" },
+  { s: "CYPHUSDT", n: "Cypher / CYPH", c: "加密货币与算力基础设施", d: "区块链密码学或隐私网络相关加密资产。" },
+  { s: "HOODUSDT", n: "Robinhood", c: "加密货币与算力基础设施", d: "美股知名免佣金股票及加密货币交易平台。" },
+  { s: "HUTUSDT", n: "Hut 8 Corp", c: "加密货币与算力基础设施", d: "北美大型数字资产挖矿及 AI 算力基础设施商。" },
+  { s: "INTWUSDT", n: "InterLnkd / INTW", c: "加密货币与算力基础设施", d: "区块链或特定智能合约平台加密资产。" },
+  { s: "IRENUSDT", n: "Iris Energy", c: "加密货币与算力基础设施", d: "利用可再生能源进行比特币挖矿及 AI 算力的数据中心。" },
+  { s: "MARAUSDT", n: "MARA Holdings", c: "加密货币与算力基础设施", d: "Marathon Digital，北美大型数字货币挖矿巨头。" },
+  { s: "MSTRUSDT", n: "微策投资", c: "加密货币与算力基础设施", d: "MicroStrategy，全球持有比特币最多的上市公司。" },
+  { s: "ONDSUSDT", n: "Ondo Finance", c: "加密货币与算力基础设施", d: "现实世界资产 (RWA) 代币化协议概念标的。" },
+  { s: "PENGUSDT", n: "Pudgy Penguins", c: "加密货币与算力基础设施", d: "知名 NFT 项目“胖企鹅”(Pudgy Penguins) 生态代币。" },
+  { s: "QNTXUSDT", n: "QuantX / QNTX", c: "加密货币与算力基础设施", d: "量化交易科技或加密资产协议标的。" },
+  { s: "SPCXUSD1", n: "SpaceX 概念 (USD1)", c: "加密货币与算力基础设施", d: "SpaceX 商业火箭与星链股权概念衍生品 (USD1计价)。" },
+  { s: "SPCXUSDT", n: "SpaceX 概念 (USDT)", c: "加密货币与算力基础设施", d: "SpaceX 商业火箭与星链股权概念衍生品 (USDT计价)。" },
+
+  // 5. ETF指数与杠杆基金
+  { s: "EWJUSDT", n: "iShares 日本 ETF", c: "ETF指数与杠杆基金", d: "跟踪日本股市综合表现的指数基金 (EWJ)。" },
+  { s: "EWTUSDT", n: "iShares 台湾 ETF", c: "ETF指数与杠杆基金", d: "跟踪台湾股市（主要是台积电等）表现的 ETF (EWT)。" },
+  { s: "EWYUSDT", n: "iShares 韩国 ETF", c: "ETF指数与杠杆基金", d: "跟踪韩国股市（三星、SK海力士等）表现的 ETF (EWY)。" },
+  { s: "EWZUSDT", n: "iShares 巴西 ETF", c: "ETF指数与杠杆基金", d: "跟踪巴西股市表现的指数基金 (EWZ)。" },
+  { s: "GDXUSDT", n: "金矿开采企业 ETF", c: "ETF指数与杠杆基金", d: "VanEck 跟踪全球黄金开采企业表现的 ETF (GDX)。" },
+  { s: "IWMUSDT", n: "罗素2000 ETF", c: "ETF指数与杠杆基金", d: "跟踪美国 2000 家小盘股综合表现的权威 ETF (IWM)。" },
+  { s: "KORUUSDT", n: "韩国 2x 做多 ETF", c: "ETF指数与杠杆基金", d: "Direxion 2 倍做多韩国股票指数的杠杆 ETF (KORU)。" },
+  { s: "KSTRUSDT", n: "科创50 ETF", c: "ETF指数与杠杆基金", d: "KraneShares 跟踪中国上海证券交易所科创 50 指数的 ETF。" },
+  { s: "NVDLUSDT", n: "英伟达 2x 做多 ETF", c: "ETF指数与杠杆基金", d: "GraniteShares 2 倍做多英伟达股价的杠杆 ETF (NVDL)。" },
+  { s: "QQQUSDT", n: "纳斯达克 100 ETF", c: "ETF指数与杠杆基金", d: "Invesco 跟踪美股纳斯达克 100 科技指数的 ETF (QQQ)。" },
+  { s: "SMHUSDT", n: "半导体 ETF", c: "ETF指数与杠杆基金", d: "VanEck 跟踪全球半导体巨头股票表现的 ETF (SMH)。" },
+  { s: "SOXLUSDT", n: "半导体 3x 做多 ETF", c: "ETF指数与杠杆基金", d: "Direxion 3 倍做多费城半导体指数的杠杆 ETF (SOXL)。" },
+  { s: "SOXSUSDT", n: "半导体 3x 做空 ETF", c: "ETF指数与杠杆基金", d: "Direxion 3 倍做空费城半导体指数的杠杆 ETF (SOXS)。" },
+  { s: "SPYUSDT", n: "标普 500 ETF", c: "ETF指数与杠杆基金", d: "SPDR 跟踪美国标普 500 指数的全球最大 ETF (SPY)。" },
+  { s: "SQQQUSDT", n: "纳斯达克 3x 做空 ETF", c: "ETF指数与杠杆基金", d: "ProShares 3 倍反向做空纳斯达克 100 指数的 ETF (SQQQ)。" },
+  { s: "STXXUSDT", n: "欧洲斯托克 50 概念", c: "ETF指数与杠杆基金", d: "追踪欧洲蓝筹股 STOXX 50 指数的衍生标的。" },
+  { s: "TBTUSDT", n: "做空美债 2x ETF", c: "ETF指数与杠杆基金", d: "ProShares 2 倍做空美国 20 年期以上长期国债的 ETF (TBT)。" },
+  { s: "TMFUSDT", n: "做多美债 3x ETF", c: "ETF指数与杠杆基金", d: "Direxion 3 倍做多美国 20 年期以上长期国债的 ETF (TMF)。" },
+  { s: "TQQQUSDT", n: "纳斯达克 3x 做多 ETF", c: "ETF指数与杠杆基金", d: "ProShares 3 倍做多纳斯达克 100 指数的杠杆 ETF (TQQQ)。" },
+  { s: "TSLLUSDT", n: "特斯拉 2x 做多 ETF", c: "ETF指数与杠杆基金", d: "Direxion 2 倍做多特斯拉股价的杠杆 ETF (TSLL)。" },
+  { s: "TZAUSDT", n: "小盘股 3x 做空 ETF", c: "ETF指数与杠杆基金", d: "Direxion 3 倍做空罗素 2000 小盘股指数的 ETF (TZA)。" },
+  { s: "URNMUSDT", n: "铀矿开采 ETF", c: "ETF指数与杠杆基金", d: "Sprott 跟踪全球铀矿开采与核能产业链的 ETF (URNM)。" },
+  { s: "UVXYUSDT", n: "恐慌指数 1.5x ETF", c: "ETF指数与杠杆基金", d: "ProShares 1.5 倍做多标普 500 短期波动率 (VIX) 的 ETF。" },
+  { s: "XBIUSDT", n: "生物科技 ETF", c: "ETF指数与杠杆基金", d: "SPDR 跟踪美国中小型生物科技公司的 ETF (XBI)。" },
+  { s: "XLEUSDT", n: "能源行业 ETF", c: "ETF指数与杠杆基金", d: "跟踪标普 500 能源板块（埃克森美孚等）的 ETF (XLE)。" },
+
+  // 6. 中国/香港上市科技股及概念
+  { s: "BABAUSDT", n: "阿里巴巴", c: "中国/香港上市科技股", d: "Alibaba Group，中国领先的电商与云计算巨头。" },
+  { s: "BZUSDT", n: "BOSS直聘", c: "中国/香港上市科技股", d: "Kanzhun Limited，中国领先的在线招聘平台。" },
+  { s: "CXMTUSDT", n: "长鑫存储概念", c: "中国/香港上市科技股", d: "ChangXin Memory，中国 DRAM 动态随机存取存储器制造企业。" },
+  { s: "HK0625USDT", n: "高伟电子", c: "中国/香港上市科技股", d: "00625.HK，移动设备相机模组制造厂商。" },
+  { s: "HK0700USDT", n: "腾讯控股", c: "中国/香港上市科技股", d: "00700.HK，中国社交与游戏龙头（微信母公司）。" },
+  { s: "HK0992USDT", n: "联想集团", c: "中国/香港上市科技股", d: "00992.HK，全球个人电脑与 AI 服务器制造巨头。" },
+  { s: "HK1810USDT", n: "小米集团", c: "中国/香港上市科技股", d: "01810.HK，智能手机、智能家居及新能源汽车制造商。" },
+  { s: "KUAISHOUUSDT", n: "快手", c: "中国/香港上市科技股", d: "中国知名短视频、直播及内容电商平台。" },
+  { s: "MEITUANUSDT", n: "美团", c: "中国/香港上市科技股", d: "Meituan，中国生活服务及外卖本地生活科技平台。" },
+  { s: "PDDUSDT", n: "拼多多", c: "中国/香港上市科技股", d: "PDD Holdings，中国电商巨头及跨境电商平台 Temu 母公司。" },
+  { s: "POPMARTUSDT", n: "泡泡玛特", c: "中国/香港上市科技股", d: "Pop Mart，中国潮玩 IP 文化经营与盲盒领军企业。" },
+  { s: "TENCENTUSDT", n: "腾讯 (美股/衍生代币)", c: "中国/香港上市科技股", d: "Tencent Holdings 关联衍生交易标的。" },
+  { s: "ZHONGJIUSDT", n: "中际旭创概念", c: "中国/香港上市科技股", d: "Zhongji Innolight，全球 800G/1.6T 高速光模块制造龙头。" },
+
+  // 7. 韩国上市科技及关联标的
+  { s: "CSOPSAMSUNG2LUSDT", n: "南方东英三星 2x 杠杆", c: "韩国上市科技及关联标的", d: "追踪韩国三星电子股价的 2 倍看多杠杆产品。" },
+  { s: "CSOPSKHYNIX2LUSDT", n: "南方东英SK海力士 2x 杠杆", c: "韩国上市科技及关联标的", d: "追踪韩国 SK 海力士股价的 2 倍看多杠杆产品。" },
+  { s: "HANMIUSDT", n: "韩美半导体", c: "韩国上市科技及关联标的", d: "Hanmi Semiconductor，韩国 HBM 芯片封装设备制造龙头。" },
+  { s: "HYUNDAIUSDT", n: "现代汽车", c: "韩国上市科技及关联标的", d: "Hyundai Motor Company，韩国跨国汽车制造巨头。" },
+  { s: "KODEX200USDT", n: "KODEX 200 ETF", c: "韩国上市科技及关联标的", d: "韩国市场权威的 Korea 200 指数杠杆/跟踪型基金。" },
+  { s: "LGELECTRONICSUSDT", n: "LG电子", c: "韩国上市科技及关联标的", d: "LG Electronics，韩国大型家电、电子及车规零部件商。" },
+  { s: "NAVERUSDT", n: "Naver", c: "韩国上市科技及关联标的", d: "韩国最大的搜索引擎及门户网站，互联网科技巨头。" },
+  { s: "SAMSUNGEMUSDT", n: "三星电机", c: "韩国上市科技及关联标的", d: "Samsung Electro-Mechanics，被动元件 (MLCC) 制造巨头。" },
+  { s: "SAMSUNGUSDT", n: "三星电子", c: "韩国上市科技及关联标的", d: "Samsung Electronics，韩国存储芯片与消费电子龙头。" },
+
+  // 8. 传统工业、汽车与消费
+  { s: "AMCUSDT", n: "AMC院线", c: "传统工业、汽车与消费", d: "AMC Entertainment，美股连锁电影院线，知名散户 Meme 股。" },
+  { s: "BEUSDT", n: "Bloom Energy", c: "传统工业、汽车与消费", d: "固体氧化物燃料电池及清洁能源解决方案商。" },
+  { s: "BRKBUSDT", n: "伯克希尔·哈撒韦 B", c: "传统工业、汽车与消费", d: "Berkshire Hathaway，巴菲特旗下的多元化投资控股公司。" },
+  { s: "BXUSDT", n: "黑石集团", c: "传统工业、汽车与消费", d: "Blackstone Inc.，全球最大的替代资产管理及私募股权巨头。" },
+  { s: "BYDUSDT", n: "比亚迪", c: "传统工业、汽车与消费", d: "BYD，全球新能源汽车与动力电池龙头。" },
+  { s: "CATUSDT", n: "卡特彼勒", c: "传统工业、汽车与消费", d: "Caterpillar Inc.，全球工程机械与矿山设备制造巨头。" },
+  { s: "COSTUSDT", n: "开市客", c: "传统工业、汽车与消费", d: "Costco Wholesale，全球知名会员制仓储零售巨头。" },
+  { s: "DJTUSDT", n: "特朗普媒体科技", c: "传统工业、汽车与消费", d: "Trump Media，社交平台 Truth Social 母公司。" },
+  { s: "FLEXUSDT", n: "伟创力", c: "传统工业、汽车与消费", d: "Flex Ltd.，全球电子制造服务 (EMS) 供应链提供商。" },
+  { s: "FLNCUSDT", n: "Fluence Energy", c: "传统工业、汽车与消费", d: "西门子与 AES 合资的储能产品与软件服务商。" },
+  { s: "GEVUSDT", n: "GE Vernova", c: "传统工业、汽车与消费", d: "通用电气 (GE) 拆分出的电力与电气化能源公司。" },
+  { s: "GMEUSDT", n: "游戏驿站", c: "传统工业、汽车与消费", d: "GameStop，美股线下游戏零售商，散户 Meme 股龙头。" },
+  { s: "GSUSDT", n: "高盛", c: "传统工业、汽车与消费", d: "Goldman Sachs，全球顶级跨国投资银行与金融机构。" },
+  { s: "HDUSDT", n: "家得宝", c: "传统工业、汽车与消费", d: "The Home Depot，全球最大的家居建材零售巨头。" },
+  { s: "JPMUSDT", n: "摩根大通", c: "传统工业、汽车与消费", d: "JPMorgan Chase，美国资产规模最大的商业银行与金融巨头。" },
+  { s: "KOUSDT", n: "可口可乐", c: "传统工业、汽车与消费", d: "The Coca-Cola Company，全球饮料跨国巨头。" },
+  { s: "RIVNUSDT", n: "Rivian", c: "传统工业、汽车与消费", d: "Rivian Automotive，美国电动皮卡与汽车制造企业。" },
+  { s: "RKLBUSDT", n: "Rocket Lab", c: "传统工业、汽车与消费", d: "Rocket Lab，小型商业火箭发射与卫星航天公司。" },
+  { s: "SOFIUSDT", n: "SoFi Technologies", c: "传统工业、汽车与消费", d: "美国综合性数字金融服务与移动银行平台。" },
+  { s: "TSLAUSDT", n: "特斯拉", c: "传统工业、汽车与消费", d: "Tesla, Inc.，电动汽车、储能及人形机器人龙头。" },
+  { s: "VUSDT", n: "维萨", c: "传统工业、汽车与消费", d: "Visa Inc.，全球数字支付与信用卡结算网络巨头。" },
+  { s: "VSTUSDT", n: "Vistra Corp", c: "传统工业、汽车与消费", d: "美国大型电力生产商（核电/数据中心供电）。" },
+  { s: "WENUSDT", n: "温蒂汉堡", c: "传统工业、汽车与消费", d: "The Wendy's Company，美国知名快餐连锁餐饮集团。" },
+  { s: "WMTUSDT", n: "沃尔玛", c: "传统工业、汽车与消费", d: "Walmart Inc.，全球最大的连锁零售超市巨头。" },
+
+  // 9. 大宗商品与贵金属
+  { s: "CLUSDT", n: "WTI 原油", c: "大宗商品与贵金属", d: "西德克萨斯轻质原油 (CL) 期货衍生标的。" },
+  { s: "COPPERUSDT", n: "现货铜 / 铜期货", c: "大宗商品与贵金属", d: "工业金属铜的价格指数/期货衍生品。" },
+  { s: "NATGASUSDT", n: "天然气", c: "大宗商品与贵金属", d: "Natural Gas，亨利港天然气期货价格衍生标的。" },
+  { s: "USDBRLUSDT", n: "美元 / 巴西雷亚尔", c: "大宗商品与贵金属", d: "USD/BRL 外汇汇率衍生标的。" },
+  { s: "XAGUSDT", n: "现货白银", c: "大宗商品与贵金属", d: "Silver，现货白银兑美元贵金属衍生标的。" },
+  { s: "XAUUSDT", n: "现货黄金", c: "大宗商品与贵金属", d: "Gold，现货黄金兑美元避险贵金属标的。" },
+  { s: "XPDUSDT", n: "现货钯金", c: "大宗商品与贵金属", d: "Palladium，贵金属钯金市场价格衍生标的。" },
+  { s: "XPTUSDT", n: "现货铂金", c: "大宗商品与贵金属", d: "Platinum，贵金属铂金市场价格衍生标的。" },
+
+  // 10. 医药、生物科技与医疗
+  { s: "LLYUSDT", n: "礼来公司", c: "医药、生物科技与医疗", d: "Eli Lilly，全球制药巨头（减肥药替尔泊肽开发者）。" },
+  { s: "MRKUSDT", n: "默沙东", c: "医药、生物科技与医疗", d: "Merck & Co.，生物制药巨头（肿瘤药 K 药开发者）。" },
+  { s: "MRNAUSDT", n: "莫德纳", c: "医药、生物科技与医疗", d: "Moderna, Inc.，mRNA 疫苗与核酸疗法领军企业。" },
+  { s: "NVOUSDT", n: "诺和诺德", c: "医药、生物科技与医疗", d: "Novo Nordisk，丹麦制药巨头（减肥药司美格鲁肽开发者）。" },
+
+  // 11. 其他概念与衍生品
+  { s: "BBXUSDT", n: "BBX 概念标的", c: "其他概念与衍生品", d: "加密货币项目或特定金融资产代码。" },
+  { s: "BOTUSDT", n: "BOT 机器人概念", c: "其他概念与衍生品", d: "AI 机器人或自动化交易工具相关代币。" },
+  { s: "BSPUSDT", n: "BSP 概念标的", c: "其他概念与衍生品", d: "区块链项目代币或派生金融标的。" },
+  { s: "CBRSUSDT", n: "CBRS 无线通信概念", c: "其他概念与衍生品", d: "专有无线网络技术相关衍生品。" },
+  { s: "CIENUSDT", n: "Ciena", c: "其他概念与衍生品", d: "电信网络设备及光网络系统解决方案提供商。" },
+  { s: "FWDIUSDT", n: "Forward Innovation", c: "其他概念与衍生品", d: "创新科技投资派生标的代码。" },
+  { s: "LYTEUSDT", n: "Lyte 概念", c: "其他概念与衍生品", d: "特定科技或加密网络项目概念代码。" },
+  { s: "SHAZUSDT", n: "Shaz 概念", c: "其他概念与衍生品", d: "特定 Web3 项目或 Meme 衍生品代码。" },
+  { s: "SKUUUSDT", n: "Sku 衍生标的", c: "其他概念与衍生品", d: "特定金融指数或链上衍生标的代码。" },
+  { s: "SNXXUSDT", n: "SNX 衍生标的", c: "其他概念与衍生品", d: "Synthetix (SNX) 或特定技术派生标的。" },
+  { s: "STRCUSDT", n: "Sarcos Technology", c: "其他概念与衍生品", d: "可穿戴外骨骼机器人与工业机器人公司。" },
+  { s: "USARUSDT", n: "USAR 军工概念", c: "其他概念与衍生品", d: "国防军工概念或链上特定资产代币代码。" }
+];
+
+let currentCategory = 'ALL';
+
+function renderTable(items) {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    
+    items.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td class="symbol-code">${item.s}</td>
+            <td class="name-cn">${item.n}</td>
+            <td><span class="category-tag">${item.c}</span></td>
+            <td class="desc">${item.d}</td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    document.getElementById('statsCount').innerText = `显示 ${items.length} / ${data.length} 个项目`;
+}
+
+function selectCategory(cat) {
+    currentCategory = cat;
+    
+    // 更新按钮高亮样式
+    const btns = document.querySelectorAll('.cat-btn');
+    btns.forEach(btn => {
+        if ((cat === 'ALL' && btn.innerText.includes('全部')) || btn.innerText.includes(cat.replace('与', '').slice(0,4))) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    filterTable();
+}
+
+function filterTable() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    
+    const filtered = data.filter(item => {
+        const matchesCategory = (currentCategory === 'ALL' || item.c === currentCategory);
+        const matchesQuery = !query || 
+            item.s.toLowerCase().includes(query) ||
+            item.n.toLowerCase().includes(query) ||
+            item.c.toLowerCase().includes(query) ||
+            item.d.toLowerCase().includes(query);
+            
+        return matchesCategory && matchesQuery;
+    });
+    
+    renderTable(filtered);
+}
+
+// 初始渲染全部
+renderTable(data);
+</script>
+
+</body>
+</html>
