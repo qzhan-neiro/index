@@ -1,166 +1,437 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Excel 姓名与分数排序工具</title>
+<title>教师成绩分析工具</title>
+
+<!-- Excel 文件解析库：首次使用需要联网 -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
-:root{--bg:#f4f7fb;--card:#fff;--ink:#182230;--muted:#667085;--line:#e4e9f0;--blue:#2563eb;--blue2:#eff6ff;--green:#087443}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
-.wrap{max-width:1050px;margin:38px auto;padding:0 18px}.hero{margin-bottom:22px}.eyebrow{color:var(--blue);font-size:13px;font-weight:700;letter-spacing:.08em}.hero h1{font-size:30px;margin:8px 0}.hero p{margin:0;color:var(--muted);line-height:1.7}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin:16px 0;box-shadow:0 6px 24px rgba(16,24,40,.04)}
-.upload{border:2px dashed #b8c8e5;border-radius:14px;padding:28px;text-align:center;background:#fbfdff;cursor:pointer;transition:.2s}.upload:hover,.upload.drag{border-color:var(--blue);background:var(--blue2)}.upload strong{display:block;font-size:17px;margin-bottom:8px}.upload span{font-size:13px;color:var(--muted)}
-input[type=file]{display:none}.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.btn{border:1px solid var(--line);background:white;color:var(--ink);padding:10px 15px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn:disabled{opacity:.45;cursor:not-allowed}.btn:hover:not(:disabled){filter:brightness(.97)}select,input[type=search]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:white;font-size:14px;color:var(--ink)}.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:15px}.stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:120px}.stat small{display:block;color:var(--muted);margin-bottom:5px}.stat b{font-size:20px}
-.tabletop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.tablewrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:480px}th,td{text-align:left;padding:12px 15px;border-bottom:1px solid var(--line);font-size:14px}th{position:sticky;top:0;background:#f8fafc;color:#475467;font-weight:700}tbody tr:hover{background:#f8fbff}tbody tr:last-child td{border-bottom:0}.rank{color:var(--muted);width:80px}.score{font-weight:700;font-variant-numeric:tabular-nums}.empty{text-align:center;color:var(--muted);padding:32px}.note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:12px}.status{font-size:13px;color:var(--green);margin-top:10px;min-height:18px}.pill{font-size:12px;border-radius:999px;padding:4px 8px;background:#eef2ff;color:#3730a3}
-@media(max-width:600px){.wrap{margin:22px auto}.hero h1{font-size:24px}.card{padding:15px}.upload{padding:22px 12px}}
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6fb;color:#172033;font-family:Arial,"Microsoft YaHei",sans-serif}
+main{max-width:1050px;margin:28px auto;padding:0 16px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{margin:7px 0;font-size:28px}
+h2{font-size:18px;margin:0 0 15px}
+.sub,.hint,small{color:#667085;line-height:1.7}
+.eyebrow{color:#315de8;font-size:12px;font-weight:bold;letter-spacing:2px}
+.card{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:20px;margin:16px 0;box-shadow:0 4px 18px #1c31500a}
+.upload{display:block;text-align:center;padding:23px;border:2px dashed #b8c8e5;border-radius:12px;background:#fbfcff;cursor:pointer}
+.upload strong{display:block;margin-bottom:7px}
+input[type=file]{display:none}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+button,select,input[type=number]{padding:10px 12px;border:1px solid #dce3ed;border-radius:9px;background:#fff;color:#172033;font:inherit;font-size:14px}
+button{cursor:pointer;font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:#315de8;color:#fff;border-color:#315de8}
+.status{font-size:13px;color:#13845b;margin-top:10px;min-height:18px}
+.hint{font-size:12px;margin-top:10px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.metric,.grade{border:1px solid #e3e8f0;border-radius:12px;padding:15px}
+.label{font-size:13px;color:#667085}
+.value{font-size:27px;font-weight:800;margin-top:7px}
+.grades{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.gradeTop{display:flex;justify-content:space-between;font-weight:bold}
+.count{font-size:25px;font-weight:bold;margin:10px 0}
+.track{height:7px;background:#edf0f5;border-radius:10px;margin-top:10px;overflow:hidden}
+.bar{height:100%;width:0;background:#315de8}
+.excellent .bar{background:#16865d}
+.good .bar{background:#3977e8}
+.pass .bar{background:#d99a26}
+.fail .bar{background:#d94a4a}
+.pill{font-size:12px;padding:4px 8px;background:#eff6ff;color:#1d4ed8;border-radius:20px}
+.chart svg{width:100%;height:auto;display:block}
+.tablewrap{overflow:auto;max-height:400px;border:1px solid #e3e8f0;border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:420px}
+td,th{text-align:left;padding:11px 13px;border-bottom:1px solid #e8edf3;font-size:13px}
+th{background:#f8fafc;color:#475467;position:sticky;top:0}
+tr:last-child td{border:0}
+.empty{text-align:center;padding:28px;color:#667085}
+@media(max-width:700px){
+ .grid,.grades{grid-template-columns:repeat(2,1fr)}
+ header{align-items:flex-start}
+ h1{font-size:24px}
+ .card{padding:14px}
+ .value{font-size:23px}
+}
+@media print{
+ body{background:white}
+ main{margin:0}
+ .no-print{display:none!important}
+ .card{box-shadow:none;break-inside:avoid;padding:12px}
+ .tablewrap{max-height:none;overflow:visible}
+ th{position:static}
+}
 </style>
 </head>
+
 <body>
-<div class="wrap">
-  <header class="hero">
-    <div class="eyebrow">EXCEL TOOLKIT · 本地排序</div>
-    <h1>姓名与分数排序工具</h1>
-    <p>导入 Excel，一键按姓名拼音或分数排序，再导出新的 Excel 文件。原始文件不会被修改。</p>
-  </header>
+<main>
+<header>
+ <div>
+  <div class="eyebrow">TEACHER TOOLKIT</div>
+  <h1>班级成绩分析</h1>
+  <div class="sub">平均分 · 成绩等级 · 班级成绩分布图</div>
+ </div>
+ <button class="no-print" onclick="window.print()">打印报告</button>
+</header>
 
-  <section class="card">
-    <label class="upload" id="dropZone" for="fileInput">
-      <strong>📄 点击选择或拖拽 Excel 文件到这里</strong>
-      <span>支持 .xlsx / .xls · 默认读取第一个工作表</span>
-    </label>
-    <input id="fileInput" type="file" accept=".xlsx,.xls">
-    <div class="stats">
-      <div class="stat"><small>读取记录</small><b id="total">0</b></div>
-      <div class="stat"><small>当前排序</small><b id="sortLabel" style="font-size:15px">未排序</b></div>
-      <div class="stat"><small>数据状态</small><b id="stateLabel" style="font-size:15px">等待导入</b></div>
-    </div>
-    <div class="status" id="status"></div>
-    <div class="note">提示：表格首行应包含“序号、姓名、分数”等表头。程序会尝试自动识别列名；如果列名不规范，也可以在下方手动指定。</div>
-  </section>
+<section class="card no-print">
+ <label class="upload" id="drop" for="file">
+  <strong>📊 点击选择或拖拽 Excel 成绩表</strong>
+  <small>支持 .xlsx / .xls / .csv，默认读取第一个工作表，首行为表头</small>
+ </label>
+ <input id="file" type="file" accept=".xlsx,.xls,.csv">
+ <div class="status" id="status">请导入成绩表，或先加载示例数据体验。</div>
+ <div class="controls">
+  <button id="demo">加载示例数据</button>
+  <button id="clear">清空</button>
+  <button class="primary" id="export" disabled>导出分析 Excel</button>
+ </div>
+ <div class="hint">数据在当前浏览器中处理。首次读取 Excel 需要联网加载解析库。</div>
+</section>
 
-  <section class="card">
-    <div class="tabletop"><h2 style="font-size:18px;margin:0">排序设置</h2><span class="pill">可随时切换排序</span></div>
-    <div class="controls">
-      <select id="sortMode" aria-label="排序方式">
-        <option value="pinyin">姓名拼音顺序（A → Z）</option>
-        <option value="scoreDesc">分数从高到低</option>
-        <option value="scoreAsc">分数从低到高</option>
-        <option value="pinyinDesc">姓名拼音倒序（Z → A）</option>
-      </select>
-      <button class="btn primary" id="sortBtn" disabled>应用排序</button>
-      <button class="btn" id="resetBtn" disabled>恢复原顺序</button>
-      <button class="btn primary" id="exportBtn" disabled>导出排序后的 Excel</button>
-    </div>
-    <div class="note">同分时会按姓名拼音排序；姓名拼音排序使用浏览器中文拼音排序规则。导出时会将“序号”重新编为 1、2、3……</div>
-  </section>
+<section class="card no-print">
+ <h2>统计设置</h2>
+ <div class="controls">
+  <label>分数列 <select id="scorecol" disabled></select></label>
+  <label>优秀线 <input id="excellent" type="number" value="90" style="width:82px"></label>
+  <label>良好线 <input id="good" type="number" value="80" style="width:82px"></label>
+  <label>及格线 <input id="pass" type="number" value="60" style="width:82px"></label>
+  <label>图表区间
+   <select id="bin">
+    <option value="5">每 5 分</option>
+    <option value="10" selected>每 10 分</option>
+    <option value="20">每 20 分</option>
+   </select>
+  </label>
+  <button class="primary" id="refresh" disabled>重新分析</button>
+ </div>
+ <div class="hint">默认优秀 ≥90、良好 ≥80、及格 ≥60。可按学校标准修改。</div>
+</section>
 
-  <section class="card">
-    <div class="tabletop">
-      <h2 style="font-size:18px;margin:0">数据预览 <span id="previewCount" style="font-size:13px;color:var(--muted);font-weight:400"></span></h2>
-      <input type="search" id="search" placeholder="搜索姓名或分数…" disabled>
-    </div>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th class="rank">序号</th><th>姓名</th><th>分数</th></tr></thead>
-        <tbody id="tbody"><tr><td colspan="3" class="empty">请先导入 Excel 文件</td></tr></tbody>
-      </table>
-    </div>
-  </section>
-  <p class="note">隐私说明：文件在你的浏览器中处理，不会上传到本工具的服务器。读取和导出 Excel 需要联网加载 SheetJS 脚本库。</p>
-</div>
+<section class="card">
+ <h2>一、核心成绩指标 <span class="pill" id="valid">尚无数据</span></h2>
+ <div class="grid">
+  <div class="metric"><div class="label">平均分</div><div class="value" id="mean">—</div></div>
+  <div class="metric"><div class="label">中位数</div><div class="value" id="median">—</div></div>
+  <div class="metric"><div class="label">最高分</div><div class="value" id="max">—</div></div>
+  <div class="metric"><div class="label">最低分</div><div class="value" id="min">—</div></div>
+ </div>
+ <div class="hint" id="summary">导入成绩后显示统计结果。</div>
+</section>
+
+<section class="card">
+ <h2>二、成绩等级统计</h2>
+ <div class="grades">
+  <div class="grade excellent">
+   <div class="gradeTop"><span>优秀</span><span id="ep">—</span></div>
+   <div class="count" id="ec">—</div><small id="er">≥90分</small>
+   <div class="track"><div class="bar" id="eb"></div></div>
+  </div>
+  <div class="grade good">
+   <div class="gradeTop"><span>良好</span><span id="gp">—</span></div>
+   <div class="count" id="gc">—</div><small id="gr">80–89.9分</small>
+   <div class="track"><div class="bar" id="gb"></div></div>
+  </div>
+  <div class="grade pass">
+   <div class="gradeTop"><span>及格</span><span id="pp">—</span></div>
+   <div class="count" id="pc">—</div><small id="pr">60–79.9分</small>
+   <div class="track"><div class="bar" id="pb"></div></div>
+  </div>
+  <div class="grade fail">
+   <div class="gradeTop"><span>不及格</span><span id="fp">—</span></div>
+   <div class="count" id="fc">—</div><small id="fr">低于60分</small>
+   <div class="track"><div class="bar" id="fb"></div></div>
+  </div>
+ </div>
+ <div class="hint" id="ratehint">比例以有效分数人数为分母。</div>
+</section>
+
+<section class="card">
+ <h2>三、班级成绩分布图</h2>
+ <div id="chart" class="chart"><div class="empty">导入数据后自动生成成绩分布图</div></div>
+ <div class="hint" id="chartnote">横轴为分数区间，纵轴为人数。</div>
+</section>
+
+<section class="card">
+ <h2>四、学生名单排序与成绩明细 <span class="pill" id="detailcount">0 条</span></h2>
+ <div class="controls no-print" style="margin:0 0 12px">
+  <label>排序方式
+   <select id="sortby">
+    <option value="score-desc">分数从高到低</option>
+    <option value="score-asc">分数从低到高</option>
+    <option value="name-asc">姓名拼音 A–Z</option>
+    <option value="name-desc">姓名拼音 Z–A</option>
+   </select>
+  </label>
+  <button id="sortbtn" class="primary" disabled>应用排序</button>
+ </div>
+ <div class="tablewrap">
+  <table>
+   <thead><tr><th>显示序号</th><th>姓名</th><th>分数</th><th>等级</th></tr></thead>
+   <tbody id="details"><tr><td colspan="4" class="empty">暂无数据</td></tr></tbody>
+  </table>
+ </div>
+</section>
+
+<div class="hint">请妥善保管包含学生姓名和成绩的文件。成绩数据由本页面在浏览器中处理。</div>
+</main>
+
 <script>
 const $ = id => document.getElementById(id);
-let originalRows = [], rows = [], workbookName = "排序结果";
-const collator = new Intl.Collator("zh-CN-u-co-pinyin", {sensitivity:"base", numeric:true});
-let headers = {no:null,name:null,score:null};
+let rows = [], heads = [], nameKey = null, filename = "班级成绩";
 
-function norm(v){return String(v ?? "").trim().toLowerCase().replace(/\s/g,"");}
-function findHeader(hs, patterns){
-  for(let i=0;i<hs.length;i++){const s=norm(hs[i]);if(patterns.some(p=>p.test(s)))return i;}
-  return -1;
+const demo = [
+ ["张三",96],["李四",88],["王五",73],["赵六",59],["陈晨",91],
+ ["刘洋",84],["杨帆",67],["黄敏",78],["周宁",100],["吴桐",82],
+ ["徐佳",54],["孙悦",90],["朱琳",86],["马超",62],["胡可",45],
+ ["郭欣",75],["何平",93],["高远",80],["林涛",69],["郑好",88]
+].map(([姓名,分数]) => ({姓名,分数}));
+
+function num(v) {
+ if (typeof v === "number") return Number.isFinite(v) ? v : NaN;
+ const s = String(v ?? "").trim().replace(/[,，]/g,"");
+ if (!s) return NaN;
+ return Number.isFinite(Number(s)) ? Number(s) : NaN;
 }
-function setStatus(msg, error=false){$("status").textContent=msg;$("status").style.color=error?"#b42318":"#087443";}
-function numeric(v){
-  if(typeof v==="number") return Number.isFinite(v)?v:NaN;
-  const s=String(v??"").replace(/[,，\s]/g,"").replace(/分$/,"");
-  if(!s) return NaN; const n=Number(s);return Number.isFinite(n)?n:NaN;
+function esc(s) {
+ return String(s ?? "").replace(/[&<>"']/g, c => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
 }
-function parseWorkbook(data, filename){
-  const wb=XLSX.read(data,{type:"array"});
-  const sheet=wb.Sheets[wb.SheetNames[0]];
-  const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:true});
-  if(!matrix.length) throw new Error("工作表没有数据。");
-  const hs=matrix[0].map(v=>String(v??"").trim());
-  let ni=findHeader(hs,[/^序号$/, /^编号$/, /^no\.?$/, /^id$/]);
-  let nai=findHeader(hs,[/^姓名$/, /^学生姓名$/, /^名字$/, /^name$/]);
-  let si=findHeader(hs,[/^分数$/, /^成绩$/, /^得分$/, /^总分$/, /^score$/]);
-  // If names are not recognized, assume the three columns are 序号、姓名、分数.
-  if(nai<0 && hs.length>=2) nai=1;
-  if(si<0 && hs.length>=3) si=2;
-  if(ni<0 && hs.length>=3) ni=0;
-  if(nai<0 || si<0) throw new Error("无法识别姓名或分数列。请确认首行有“姓名”和“分数”表头，且至少有两列。");
-  headers={no:ni,name:nai,score:si};
-  const parsed=[];
-  for(let i=1;i<matrix.length;i++){
-    const r=matrix[i]; if(r.every(v=>String(v??"").trim()==="")) continue;
-    const name=String(r[nai]??"").trim();
-    const score=r[si]??"";
-    parsed.push({originalIndex:parsed.length, originalNo:ni>=0?(r[ni]??""):"", name, score, scoreNum:numeric(score)});
-  }
-  if(!parsed.length) throw new Error("没有读取到有效数据行。");
-  originalRows=parsed; rows=parsed.slice(); workbookName=filename.replace(/\.(xlsx|xls)$/i,"")||"排序结果";
-  $("total").textContent=rows.length;$("stateLabel").textContent="已导入";$("sortLabel").textContent="原始顺序";
-  ["sortBtn","resetBtn","exportBtn"].forEach(id=>$(id).disabled=false);$("search").disabled=false;
-  $("search").value=""; render();setStatus(`成功读取 ${rows.length} 条记录，工作表：${wb.SheetNames[0]}`);
+function say(s,err=false) {
+ $("status").textContent = s;
+ $("status").style.color = err ? "#b42318" : "#13845b";
 }
-function compareName(a,b){return collator.compare(a.name,b.name);}
-function applySort(){
-  const mode=$("sortMode").value;
-  rows.sort((a,b)=>{
-    if(mode==="pinyin") return compareName(a,b)||a.originalIndex-b.originalIndex;
-    if(mode==="pinyinDesc") return compareName(b,a)||a.originalIndex-b.originalIndex;
-    const d=(Number.isNaN(a.scoreNum)?-Infinity:a.scoreNum)-(Number.isNaN(b.scoreNum)?-Infinity:b.scoreNum);
-    if(mode==="scoreDesc") return -d || compareName(a,b) || a.originalIndex-b.originalIndex;
-    return d || compareName(a,b) || a.originalIndex-b.originalIndex;
-  });
-  const labels={pinyin:"姓名拼音 A→Z",pinyinDesc:"姓名拼音 Z→A",scoreDesc:"分数高→低",scoreAsc:"分数低→高"};
-  $("sortLabel").textContent=labels[mode];render();setStatus("排序完成。");
+function fmt(n) {
+ return Number(n).toLocaleString("zh-CN",{maximumFractionDigits:2});
 }
-function render(){
-  const q=norm($("search").value||"");
-  const visible=rows.filter(r=>norm(r.name).includes(q)||norm(r.score).includes(q));
-  $("previewCount").textContent=`（显示 ${visible.length} / ${rows.length} 条）`;
-  const tbody=$("tbody");
-  if(!visible.length){tbody.innerHTML='<tr><td colspan="3" class="empty">没有匹配的数据</td></tr>';return;}
-  tbody.innerHTML=visible.map(r=>{
-    const index=rows.indexOf(r)+1;
-    return `<tr><td class="rank">${index}</td><td>${escapeHtml(r.name)}</td><td class="score">${escapeHtml(String(r.score??""))}</td></tr>`;
-  }).join("");
+function pct(n,total) {
+ return total ? (n/total*100).toFixed(1)+"%" : "0.0%";
 }
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function exportExcel(){
-  if(!rows.length)return;
-  const data=[["序号","姓名","分数"],...rows.map((r,i)=>[i+1,r.name,r.score])];
-  const ws=XLSX.utils.aoa_to_sheet(data);
-  ws["!cols"]=[{wch:10},{wch:20},{wch:14}];
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"排序结果");
-  XLSX.writeFile(wb,`${workbookName}_排序结果.xlsx`);
-  setStatus("导出已启动，请查看浏览器下载记录。");
+function grade(s,e,g,p) {
+ return s>=e ? "优秀" : s>=g ? "良好" : s>=p ? "及格" : "不及格";
 }
-$("fileInput").addEventListener("change",async e=>{
-  const f=e.target.files[0];if(!f)return;
-  try{parseWorkbook(await f.arrayBuffer(),f.name);}catch(err){setStatus(err.message||"读取失败，请检查文件格式。",true);}
-  e.target.value="";
+function findColumn(headers, patterns) {
+ return headers.find(k => patterns.some(re => re.test(String(k).trim().toLowerCase().replace(/\s/g,""))));
+}
+function load(data,fileName="班级成绩") {
+ if (!data.length) throw Error("没有可读取的数据。");
+ heads = Object.keys(data[0]).filter(k => !k.startsWith("__"));
+ rows = data.map((r,i) => ({...r,__i:i}));
+ filename = fileName;
+
+ nameKey = findColumn(heads,[/^姓名$/,/学生姓名/,/^名字$/,/^name$/]) || heads[1] || heads[0];
+
+ let scoreKey = findColumn(heads,[/^分数$/,/^成绩$/,/^得分$/,/总分/,/^score$/,/^数学$/,/^语文$/,/^英语$/]);
+ if (!scoreKey) {
+  scoreKey = heads.find(k => k!==nameKey && rows.some(r=>Number.isFinite(num(r[k])))) || heads[heads.length-1];
+ }
+
+ $("scorecol").innerHTML = heads.map(k=>`<option value="${esc(k)}">${esc(k)}</option>`).join("");
+ $("scorecol").value = scoreKey;
+ $("scorecol").disabled = false;
+ ["refresh","export","sortbtn"].forEach(id=>$ (id).disabled=false);
+ analyze();
+ say(`成功读取 ${rows.length} 条记录。`);
+}
+function validRows() {
+ const k = $("scorecol").value;
+ return rows.map(r=>({
+  name:String(r[nameKey]??"").trim(),
+  score:num(r[k]),
+  i:r.__i
+ })).filter(x=>Number.isFinite(x.score));
+}
+function sortList(a) {
+ const mode = $("sortby").value;
+ const collator = new Intl.Collator("zh-CN-u-co-pinyin",{sensitivity:"base",numeric:true});
+ return a.slice().sort((x,y)=>{
+  if(mode==="name-asc") return collator.compare(x.name,y.name)||y.score-x.score;
+  if(mode==="name-desc") return collator.compare(y.name,x.name)||y.score-x.score;
+  if(mode==="score-asc") return x.score-y.score||collator.compare(x.name,y.name);
+  return y.score-x.score||collator.compare(x.name,y.name);
+ });
+}
+function analyze() {
+ if (!rows.length) return;
+ const e=num($("excellent").value),g=num($("good").value),p=num($("pass").value);
+ if (![e,g,p].every(Number.isFinite)||e<g||g<p) {
+  say("分数线设置错误：优秀线应 ≥ 良好线 ≥ 及格线。",true);
+  return;
+ }
+ const a=validRows(),s=a.map(x=>x.score).sort((x,y)=>x-y),n=s.length;
+ $("valid").textContent=`有效成绩 ${n} 人`;
+ if (!n) {
+  ["mean","median","max","min"].forEach(id=>$(id).textContent="—");
+  $("summary").textContent="当前分数列没有可统计的数字。";
+  updateGrades(a,e,g,p);draw(a);detail(a,e,g,p);return;
+ }
+ const avg=s.reduce((x,y)=>x+y,0)/n;
+ const med=n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2;
+ $("mean").textContent=fmt(avg);
+ $("median").textContent=fmt(med);
+ $("max").textContent=fmt(s[n-1]);
+ $("min").textContent=fmt(s[0]);
+ $("summary").textContent=`总记录 ${rows.length} 条；有效成绩 ${n} 人；未纳入统计 ${rows.length-n} 条。`;
+ updateGrades(a,e,g,p);draw(a);detail(a,e,g,p);
+}
+function updateGrades(a,e,g,p) {
+ const c={"优秀":0,"良好":0,"及格":0,"不及格":0};
+ a.forEach(x=>c[grade(x.score,e,g,p)]++);
+ const n=a.length;
+ [["e","优秀"],["g","良好"],["p","及格"],["f","不及格"]].forEach(([id,label])=>{
+  $(id+"c").textContent=c[label];
+  $(id+"p").textContent=pct(c[label],n);
+  $(id+"b").style.width=n?c[label]/n*100+"%":"0%";
+ });
+ $("er").textContent=`≥ ${fmt(e)} 分`;
+ $("gr").textContent=`${fmt(g)} 至低于 ${fmt(e)} 分`;
+ $("pr").textContent=`${fmt(p)} 至低于 ${fmt(g)} 分`;
+ $("fr").textContent=`低于 ${fmt(p)} 分`;
+ $("ratehint").textContent=`等级比例以有效成绩 ${n} 人为分母；及格及以上 ${pct(c["优秀"]+c["良好"]+c["及格"],n)}。`;
+}
+function draw(a) {
+ if (!a.length) {
+  $("chart").innerHTML='<div class="empty">没有有效分数可绘图</div>';
+  return;
+ }
+ const bw=Number($("bin").value)||10;
+ const scores=a.map(x=>x.score);
+ const lo=Math.floor(Math.min(...scores)/bw)*bw;
+ const hi=Math.floor(Math.max(...scores)/bw)*bw;
+ const bins=[];
+ for(let x=lo;x<=hi;x+=bw) bins.push({lo:x,count:0});
+ a.forEach(x=>{
+  const i=Math.min(bins.length-1,Math.floor((x.score-lo)/bw));
+  bins[i].count++;
+ });
+ const W=900,H=320,L=52,R=20,T=22,B=60;
+ const pw=W-L-R,ph=H-T-B;
+ const mx=Math.max(1,...bins.map(b=>b.count));
+ const step=Math.max(1,Math.ceil(mx/5));
+ let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="成绩分布柱状图">`;
+ for(let y=0;y<=mx;y+=step) {
+  const yy=T+ph-y/mx*ph;
+  svg+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e7ebf2"/>`;
+  svg+=`<text x="${L-10}" y="${yy+4}" text-anchor="end" fill="#667085" font-size="12">${y}</text>`;
+ }
+ const gap=Math.min(8,pw/bins.length*.2);
+ const bar=Math.max(2,pw/bins.length-gap);
+ bins.forEach((b,i)=>{
+  const x=L+i*pw/bins.length+gap/2,h=b.count/mx*ph,y=T+ph-h;
+  svg+=`<rect x="${x}" y="${y}" width="${bar}" height="${h}" rx="3" fill="#4775e8"><title>${b.lo}–${b.lo+bw}分：${b.count}人</title></rect>`;
+  if(b.count) svg+=`<text x="${x+bar/2}" y="${y-6}" text-anchor="middle" fill="#344054" font-size="11">${b.count}</text>`;
+  if(bins.length<=18||i%Math.ceil(bins.length/18)===0||i===bins.length-1)
+   svg+=`<text x="${x+bar/2}" y="${T+ph+20}" text-anchor="middle" fill="#667085" font-size="11">${b.lo}</text>`;
+ });
+ svg+=`<line x1="${L}" y1="${T+ph}" x2="${W-R}" y2="${T+ph}" stroke="#98a2b3"/>`;
+ svg+=`<text x="${L+pw/2}" y="${H-12}" text-anchor="middle" fill="#667085" font-size="12">分数区间（每 ${bw} 分）</text>`;
+ svg+=`<text x="15" y="${T+ph/2}" transform="rotate(-90 15 ${T+ph/2})" text-anchor="middle" fill="#667085" font-size="12">人数</text></svg>`;
+ $("chart").innerHTML=svg;
+ $("chartnote").textContent=`${a.length} 个有效成绩。柱状图按所选分数区间统计人数。`;
+}
+function detail(a,e,g,p) {
+ const list=sortList(a);
+ $("detailcount").textContent=`${list.length} 条有效成绩 / ${rows.length} 条记录`;
+ $("details").innerHTML=list.length?list.map((x,i)=>
+  `<tr><td>${i+1}</td><td>${esc(x.name||"—")}</td><td><b>${fmt(x.score)}</b></td><td>${grade(x.score,e,g,p)}</td></tr>`
+ ).join(""):'<tr><td colspan="4" class="empty">暂无有效成绩</td></tr>';
+}
+function exportExcel() {
+ if (typeof XLSX==="undefined") {
+  say("Excel 组件未加载，请检查网络后刷新页面。",true);return;
+ }
+ const a=validRows();
+ if(!a.length){say("没有有效成绩可导出。",true);return;}
+ const e=num($("excellent").value),g=num($("good").value),p=num($("pass").value);
+ if (![e,g,p].every(Number.isFinite)||e<g||g<p) {
+  say("分数线设置错误，请修改后再导出。",true);return;
+ }
+ const s=a.map(x=>x.score).sort((x,y)=>x-y),n=s.length;
+ const avg=s.reduce((x,y)=>x+y,0)/n;
+ const med=n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2;
+ const c={"优秀":0,"良好":0,"及格":0,"不及格":0};
+ a.forEach(x=>c[grade(x.score,e,g,p)]++);
+ const summary=[
+  ["指标","结果"],["总记录数",rows.length],["有效成绩人数",n],
+  ["未纳入统计",rows.length-n],["平均分",avg],["中位数",med],
+  ["最高分",s[n-1]],["最低分",s[0]],["优秀线",e],["良好线",g],
+  ["及格线",p],[],["等级","人数","比例"]
+ ];
+ Object.keys(c).forEach(k=>summary.push([k,c[k],c[k]/n]));
+ const sorted=sortList(a);
+ const details=[["显示序号","姓名","分数","等级"],
+  ...sorted.map((x,i)=>[i+1,x.name,x.score,grade(x.score,e,g,p)])];
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),"统计摘要");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(details),"成绩明细");
+ XLSX.writeFile(wb,filename+"_成绩分析.xlsx");
+ say("分析结果 Excel 已生成。");
+}
+async function parseFile(f) {
+ if(typeof XLSX==="undefined") throw Error("Excel 解析组件未加载，请检查网络连接后刷新页面。");
+ let data;
+ if(/\.csv$/i.test(f.name)) {
+  const text=await f.text();
+  const wb=XLSX.read(text,{type:"string"});
+  data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+ } else {
+  const buf=await f.arrayBuffer();
+  const wb=XLSX.read(buf,{type:"array"});
+  data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+ }
+ if(!data.length) throw Error("表格为空或只有表头。");
+ load(data,f.name.replace(/\.(xlsx|xls|csv)$/i,""));
+}
+$("file").addEventListener("change",async ev=>{
+ const f=ev.target.files[0];
+ if(f)try{await parseFile(f);}catch(err){say(err.message||"读取失败",true);}
+ ev.target.value="";
 });
-$("sortBtn").addEventListener("click",applySort);
-$("resetBtn").addEventListener("click",()=>{rows=originalRows.slice();$("sortLabel").textContent="原始顺序";render();setStatus("已恢复导入时的原始顺序。");});
-$("exportBtn").addEventListener("click",exportExcel);
-$("search").addEventListener("input",render);
-const dz=$("dropZone");
-dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag");});
-dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
-dz.addEventListener("drop",async e=>{e.preventDefault();dz.classList.remove("drag");const f=e.dataTransfer.files[0];if(!f)return;if(!/\.(xlsx|xls)$/i.test(f.name)){setStatus("请拖入 .xlsx 或 .xls 文件。",true);return;}try{parseWorkbook(await f.arrayBuffer(),f.name);}catch(err){setStatus(err.message||"读取失败，请检查文件格式。",true);}});
+$("demo").onclick=()=>load(demo,"示例班级成绩");
+$("clear").onclick=()=>{
+ rows=[];heads=[];nameKey=null;
+ $("scorecol").innerHTML="";$("scorecol").disabled=true;
+ ["refresh","export","sortbtn"].forEach(id=>$(id).disabled=true);
+ ["mean","median","max","min"].forEach(id=>$(id).textContent="—");
+ $("valid").textContent="尚无数据";
+ $("summary").textContent="导入成绩后显示统计结果。";
+ $("chart").innerHTML='<div class="empty">导入数据后自动生成成绩分布图</div>';
+ $("details").innerHTML='<tr><td colspan="4" class="empty">暂无数据</td></tr>';
+ ["ec","gc","pc","fc","ep","gp","pp","fp"].forEach(id=>$(id).textContent="—");
+ ["eb","gb","pb","fb"].forEach(id=>$(id).style.width="0");
+ $("detailcount").textContent="0 条";
+ say("数据已清空。");
+};
+$("refresh").onclick=analyze;
+$("sortbtn").onclick=()=>{
+ const e=num($("excellent").value),g=num($("good").value),p=num($("pass").value);
+ if(e>=g&&g>=p) detail(validRows(),e,g,p);
+};
+$("sortby").onchange=()=>{
+ if(rows.length) {
+  const e=num($("excellent").value),g=num($("good").value),p=num($("pass").value);
+  if(e>=g&&g>=p) detail(validRows(),e,g,p);
+ }
+};
+$("scorecol").onchange=analyze;
+$("bin").onchange=()=>draw(validRows());
+["excellent","good","pass"].forEach(id=>$(id).onchange=analyze);
+$("export").onclick=exportExcel;
+$("drop").addEventListener("dragover",ev=>{
+ ev.preventDefault();$("drop").style.borderColor="#315de8";
+});
+$("drop").addEventListener("dragleave",()=>{$("drop").style.borderColor="";});
+$("drop").addEventListener("drop",async ev=>{
+ ev.preventDefault();$("drop").style.borderColor="";
+ const f=ev.dataTransfer.files[0];
+ if(f)try{await parseFile(f);}catch(err){say(err.message||"读取失败",true);}
+});
 </script>
 </body>
 </html>
