@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Excel 姓名与分数排序工具</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#182230;--muted:#667085;--line:#e4e9f0;--blue:#2563eb;--blue2:#eff6ff;--green:#087443}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1050px;margin:38px auto;padding:0 18px}.hero{margin-bottom:22px}.eyebrow{color:var(--blue);font-size:13px;font-weight:700;letter-spacing:.08em}.hero h1{font-size:30px;margin:8px 0}.hero p{margin:0;color:var(--muted);line-height:1.7}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin:16px 0;box-shadow:0 6px 24px rgba(16,24,40,.04)}
+.upload{border:2px dashed #b8c8e5;border-radius:14px;padding:28px;text-align:center;background:#fbfdff;cursor:pointer;transition:.2s}.upload:hover,.upload.drag{border-color:var(--blue);background:var(--blue2)}.upload strong{display:block;font-size:17px;margin-bottom:8px}.upload span{font-size:13px;color:var(--muted)}
+input[type=file]{display:none}.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.btn{border:1px solid var(--line);background:white;color:var(--ink);padding:10px 15px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn:disabled{opacity:.45;cursor:not-allowed}.btn:hover:not(:disabled){filter:brightness(.97)}select,input[type=search]{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:white;font-size:14px;color:var(--ink)}.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:15px}.stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:120px}.stat small{display:block;color:var(--muted);margin-bottom:5px}.stat b{font-size:20px}
+.tabletop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.tablewrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:480px}th,td{text-align:left;padding:12px 15px;border-bottom:1px solid var(--line);font-size:14px}th{position:sticky;top:0;background:#f8fafc;color:#475467;font-weight:700}tbody tr:hover{background:#f8fbff}tbody tr:last-child td{border-bottom:0}.rank{color:var(--muted);width:80px}.score{font-weight:700;font-variant-numeric:tabular-nums}.empty{text-align:center;color:var(--muted);padding:32px}.note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:12px}.status{font-size:13px;color:var(--green);margin-top:10px;min-height:18px}.pill{font-size:12px;border-radius:999px;padding:4px 8px;background:#eef2ff;color:#3730a3}
+@media(max-width:600px){.wrap{margin:22px auto}.hero h1{font-size:24px}.card{padding:15px}.upload{padding:22px 12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">EXCEL TOOLKIT · 本地排序</div>
+    <h1>姓名与分数排序工具</h1>
+    <p>导入 Excel，一键按姓名拼音或分数排序，再导出新的 Excel 文件。原始文件不会被修改。</p>
+  </header>
+
+  <section class="card">
+    <label class="upload" id="dropZone" for="fileInput">
+      <strong>📄 点击选择或拖拽 Excel 文件到这里</strong>
+      <span>支持 .xlsx / .xls · 默认读取第一个工作表</span>
+    </label>
+    <input id="fileInput" type="file" accept=".xlsx,.xls">
+    <div class="stats">
+      <div class="stat"><small>读取记录</small><b id="total">0</b></div>
+      <div class="stat"><small>当前排序</small><b id="sortLabel" style="font-size:15px">未排序</b></div>
+      <div class="stat"><small>数据状态</small><b id="stateLabel" style="font-size:15px">等待导入</b></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="note">提示：表格首行应包含“序号、姓名、分数”等表头。程序会尝试自动识别列名；如果列名不规范，也可以在下方手动指定。</div>
+  </section>
+
+  <section class="card">
+    <div class="tabletop"><h2 style="font-size:18px;margin:0">排序设置</h2><span class="pill">可随时切换排序</span></div>
+    <div class="controls">
+      <select id="sortMode" aria-label="排序方式">
+        <option value="pinyin">姓名拼音顺序（A → Z）</option>
+        <option value="scoreDesc">分数从高到低</option>
+        <option value="scoreAsc">分数从低到高</option>
+        <option value="pinyinDesc">姓名拼音倒序（Z → A）</option>
+      </select>
+      <button class="btn primary" id="sortBtn" disabled>应用排序</button>
+      <button class="btn" id="resetBtn" disabled>恢复原顺序</button>
+      <button class="btn primary" id="exportBtn" disabled>导出排序后的 Excel</button>
+    </div>
+    <div class="note">同分时会按姓名拼音排序；姓名拼音排序使用浏览器中文拼音排序规则。导出时会将“序号”重新编为 1、2、3……</div>
+  </section>
+
+  <section class="card">
+    <div class="tabletop">
+      <h2 style="font-size:18px;margin:0">数据预览 <span id="previewCount" style="font-size:13px;color:var(--muted);font-weight:400"></span></h2>
+      <input type="search" id="search" placeholder="搜索姓名或分数…" disabled>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th class="rank">序号</th><th>姓名</th><th>分数</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="3" class="empty">请先导入 Excel 文件</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  <p class="note">隐私说明：文件在你的浏览器中处理，不会上传到本工具的服务器。读取和导出 Excel 需要联网加载 SheetJS 脚本库。</p>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+let originalRows = [], rows = [], workbookName = "排序结果";
+const collator = new Intl.Collator("zh-CN-u-co-pinyin", {sensitivity:"base", numeric:true});
+let headers = {no:null,name:null,score:null};
+
+function norm(v){return String(v ?? "").trim().toLowerCase().replace(/\s/g,"");}
+function findHeader(hs, patterns){
+  for(let i=0;i<hs.length;i++){const s=norm(hs[i]);if(patterns.some(p=>p.test(s)))return i;}
+  return -1;
+}
+function setStatus(msg, error=false){$("status").textContent=msg;$("status").style.color=error?"#b42318":"#087443";}
+function numeric(v){
+  if(typeof v==="number") return Number.isFinite(v)?v:NaN;
+  const s=String(v??"").replace(/[,，\s]/g,"").replace(/分$/,"");
+  if(!s) return NaN; const n=Number(s);return Number.isFinite(n)?n:NaN;
+}
+function parseWorkbook(data, filename){
+  const wb=XLSX.read(data,{type:"array"});
+  const sheet=wb.Sheets[wb.SheetNames[0]];
+  const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:true});
+  if(!matrix.length) throw new Error("工作表没有数据。");
+  const hs=matrix[0].map(v=>String(v??"").trim());
+  let ni=findHeader(hs,[/^序号$/, /^编号$/, /^no\.?$/, /^id$/]);
+  let nai=findHeader(hs,[/^姓名$/, /^学生姓名$/, /^名字$/, /^name$/]);
+  let si=findHeader(hs,[/^分数$/, /^成绩$/, /^得分$/, /^总分$/, /^score$/]);
+  // If names are not recognized, assume the three columns are 序号、姓名、分数.
+  if(nai<0 && hs.length>=2) nai=1;
+  if(si<0 && hs.length>=3) si=2;
+  if(ni<0 && hs.length>=3) ni=0;
+  if(nai<0 || si<0) throw new Error("无法识别姓名或分数列。请确认首行有“姓名”和“分数”表头，且至少有两列。");
+  headers={no:ni,name:nai,score:si};
+  const parsed=[];
+  for(let i=1;i<matrix.length;i++){
+    const r=matrix[i]; if(r.every(v=>String(v??"").trim()==="")) continue;
+    const name=String(r[nai]??"").trim();
+    const score=r[si]??"";
+    parsed.push({originalIndex:parsed.length, originalNo:ni>=0?(r[ni]??""):"", name, score, scoreNum:numeric(score)});
+  }
+  if(!parsed.length) throw new Error("没有读取到有效数据行。");
+  originalRows=parsed; rows=parsed.slice(); workbookName=filename.replace(/\.(xlsx|xls)$/i,"")||"排序结果";
+  $("total").textContent=rows.length;$("stateLabel").textContent="已导入";$("sortLabel").textContent="原始顺序";
+  ["sortBtn","resetBtn","exportBtn"].forEach(id=>$(id).disabled=false);$("search").disabled=false;
+  $("search").value=""; render();setStatus(`成功读取 ${rows.length} 条记录，工作表：${wb.SheetNames[0]}`);
+}
+function compareName(a,b){return collator.compare(a.name,b.name);}
+function applySort(){
+  const mode=$("sortMode").value;
+  rows.sort((a,b)=>{
+    if(mode==="pinyin") return compareName(a,b)||a.originalIndex-b.originalIndex;
+    if(mode==="pinyinDesc") return compareName(b,a)||a.originalIndex-b.originalIndex;
+    const d=(Number.isNaN(a.scoreNum)?-Infinity:a.scoreNum)-(Number.isNaN(b.scoreNum)?-Infinity:b.scoreNum);
+    if(mode==="scoreDesc") return -d || compareName(a,b) || a.originalIndex-b.originalIndex;
+    return d || compareName(a,b) || a.originalIndex-b.originalIndex;
+  });
+  const labels={pinyin:"姓名拼音 A→Z",pinyinDesc:"姓名拼音 Z→A",scoreDesc:"分数高→低",scoreAsc:"分数低→高"};
+  $("sortLabel").textContent=labels[mode];render();setStatus("排序完成。");
+}
+function render(){
+  const q=norm($("search").value||"");
+  const visible=rows.filter(r=>norm(r.name).includes(q)||norm(r.score).includes(q));
+  $("previewCount").textContent=`（显示 ${visible.length} / ${rows.length} 条）`;
+  const tbody=$("tbody");
+  if(!visible.length){tbody.innerHTML='<tr><td colspan="3" class="empty">没有匹配的数据</td></tr>';return;}
+  tbody.innerHTML=visible.map(r=>{
+    const index=rows.indexOf(r)+1;
+    return `<tr><td class="rank">${index}</td><td>${escapeHtml(r.name)}</td><td class="score">${escapeHtml(String(r.score??""))}</td></tr>`;
+  }).join("");
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function exportExcel(){
+  if(!rows.length)return;
+  const data=[["序号","姓名","分数"],...rows.map((r,i)=>[i+1,r.name,r.score])];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws["!cols"]=[{wch:10},{wch:20},{wch:14}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"排序结果");
+  XLSX.writeFile(wb,`${workbookName}_排序结果.xlsx`);
+  setStatus("导出已启动，请查看浏览器下载记录。");
+}
+$("fileInput").addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{parseWorkbook(await f.arrayBuffer(),f.name);}catch(err){setStatus(err.message||"读取失败，请检查文件格式。",true);}
+  e.target.value="";
+});
+$("sortBtn").addEventListener("click",applySort);
+$("resetBtn").addEventListener("click",()=>{rows=originalRows.slice();$("sortLabel").textContent="原始顺序";render();setStatus("已恢复导入时的原始顺序。");});
+$("exportBtn").addEventListener("click",exportExcel);
+$("search").addEventListener("input",render);
+const dz=$("dropZone");
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag");});
+dz.addEventListener("dragleave",()=>dz.classList.remove("drag"));
+dz.addEventListener("drop",async e=>{e.preventDefault();dz.classList.remove("drag");const f=e.dataTransfer.files[0];if(!f)return;if(!/\.(xlsx|xls)$/i.test(f.name)){setStatus("请拖入 .xlsx 或 .xls 文件。",true);return;}try{parseWorkbook(await f.arrayBuffer(),f.name);}catch(err){setStatus(err.message||"读取失败，请检查文件格式。",true);}});
+</script>
+</body>
+</html>
